@@ -120,7 +120,7 @@ export default function PolingUnitForm() {
                 htmlFor="input-label"
                 className="block text-sm font-medium mb-2 dark:text-white"
               >
-                What is the name of the polling unit?
+                What is the name of the polling unit?
               </label>
               <input
                 type="text"
@@ -139,7 +139,7 @@ export default function PolingUnitForm() {
                 htmlFor="input-label"
                 className="block text-sm font-medium mb-2 dark:text-white"
               >
-                What is the location of the polling unit where you are voting?
+                What is the location of the polling unit where you are voting?
               </label>
               <input
                 type="text"

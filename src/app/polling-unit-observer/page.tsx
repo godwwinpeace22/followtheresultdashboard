@@ -18,7 +18,7 @@ export default function Page() {
         className="text-center text-lg mb-5 font-bold"
         style={{ fontSize: 25 }}
       >
-        Polling Unit Observer Form
+        Polling Unit Observer
       </h1>
       <p className="text-center text-gray-500">
         This form is to aid election observers and monitors send in their <br />
