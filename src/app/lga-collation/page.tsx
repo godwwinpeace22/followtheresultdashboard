@@ -3,14 +3,11 @@
 import Login from "@/components/Login";
 import LGAForm from "@/components/lga-form";
 import { useState, useEffect } from "react";
+import Common from "@/components/common";
 
 export default function Page() {
   const [showForm, setShowForm] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-
-  useEffect(() => {
-    import("preline");
-  }, []);
 
   const saveUser = () => {
     setShowForm(true);
@@ -19,9 +16,10 @@ export default function Page() {
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-10 lg:shadow-md">
+      <Common />
       <div className="flex justify-center items-center mb-20">
         <img src="/followtheresultlogo.png" alt="" style={{ width: 200 }} />
-        {/* <span>#FollowTheResult</span> */}
+        {/* <span>#FollowTheResult</span> */}C
       </div>
       <h1
         className="text-center text-lg mb-5 font-bold"
