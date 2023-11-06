@@ -2,7 +2,7 @@ import React from "react";
 
 export default function Login({ login }: { login: any }) {
   return (
-    <div className="bg-white borde max-w-2xl border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
+    <div className="bg-white borde flex flex-col w-full max-w-xl pt-20 border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
       <div className="p-4 mt-5">
         {/* Form */}
         <form>
@@ -94,7 +94,7 @@ export default function Login({ login }: { login: any }) {
             {/* End Checkbox */}
             <button
               type="submit"
-              className="py-3 px-4 inline-flex justify-center items-center gap-2 rounded-md border border-transparent font-semibold bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
+              className="py-3 px-4 mt-5 inline-flex justify-center items-center gap-2 rounded-md border border-transparent font-semibold bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
               onClick={login}
             >
               Continue
