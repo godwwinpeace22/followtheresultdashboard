@@ -12,7 +12,7 @@ export default function Page() {
       <Common />
       <div className="flex justify-center items-center mb-20">
         <img src="/followtheresultlogo.png" alt="" style={{ width: 200 }} />
-        {/* <span>#FollowTheResult</span> */}C
+        {/* <span>#FollowTheResult</span> */}
       </div>
       <h1
         className="text-center text-lg mb-5 font-bold"
