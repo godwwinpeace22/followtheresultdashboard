@@ -1,14 +1,21 @@
 "use client";
 
+import Login from "@/components/Login";
 import LGAForm from "@/components/lga-form";
 import { useState, useEffect } from "react";
 
 export default function Page() {
   const [showForm, setShowForm] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
     import("preline");
   }, []);
+
+  const saveUser = () => {
+    setShowForm(true);
+    setShowLogin(false);
+  };
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-10 lg:shadow-md">
@@ -27,13 +34,13 @@ export default function Page() {
         observation on the election day across all LGAs
       </p>
 
-      {!showForm && (
+      {!showForm && !showLogin && (
         <>
           <div className="flex justify-center items-center mt-20">
             <button
               type="button"
               className="mx-auto w-60 self-center py-3 px-4 inline-flex justify-center items-center gap-2 rounded-full border border-transparent font-semibold bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
-              onClick={() => setShowForm(true)}
+              onClick={() => setShowLogin(true)}
             >
               Get Started
             </button>
@@ -57,6 +64,16 @@ export default function Page() {
             />
           </div>
         </>
+      )}
+
+      {showLogin && (
+        <div className="flex  justify-center items-center">
+          <Login
+            login={() => {
+              saveUser();
+            }}
+          />
+        </div>
       )}
 
       {showForm && (
