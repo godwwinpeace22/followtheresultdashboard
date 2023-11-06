@@ -5,5 +5,5 @@ export default function Common() {
     import("preline");
   }, []);
 
-  return <div>common</div>;
+  return <div></div>;
 }
