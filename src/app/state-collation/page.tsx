@@ -50,11 +50,7 @@ export default function Page() {
               alt="Nigeria Youth Futures Fund logo"
               width={100}
             />
-            <img
-              src="leap-africa-logo.jpeg"
-              alt="Leap Africa logo"
-              width={100}
-            />
+            <img src="leap-africa.png" alt="Leap Africa logo" width={100} />
             <img
               src="readytoleadafrica.jpeg"
               alt="ReadyToLeadAfrica logo"

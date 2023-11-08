@@ -5,7 +5,7 @@ import Completed from "./completed";
 
 type Inputs = {
   arrival_time: string;
-  acreditation_duration: string;
+  // acreditation_duration: string;
   electronic_transmission: string;
   collation_center_code: string;
   inec_staff_arrival_time: string;
@@ -15,8 +15,8 @@ type Inputs = {
   security_officials_count: string;
   party_agents_count: string;
   easy_access_to_collation_center: string;
-  many_young_people: string;
-  open_vote_buying: string;
+  // many_young_people: string;
+  // open_vote_buying: string;
 
   process_1: string;
   process_2: string;
@@ -153,32 +153,6 @@ export default function LGAForm() {
               className="hs-accordion-content px-5 w-full overflow-hidden transition-[height] duration-300"
               aria-labelledby="hs-basic-heading-one"
             >
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  How long did it take for the BVAS to accredit a voter in your
-                  polling unit?
-                </label>
-                <select
-                  id="hs-select-label"
-                  className="py-3 px-4 pr-9 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  {...register("acreditation_duration", { required: true })}
-                >
-                  {errors.acreditation_duration && (
-                    <small className="text-red-500">
-                      This field is required
-                    </small>
-                  )}
-                  <option selected>Open this select menu</option>
-                  <option value={"1-3min"}>1-3 mins</option>
-                  <option value={"4-6min"}>4-6 mins</option>
-                  <option value={"7-10min"}>7-10 mins</option>
-                  <option value="above-10min">Above 10 mins</option>
-                </select>
-              </div>
-
               <div className="mb-5">
                 <label
                   htmlFor="input-label"
@@ -473,58 +447,6 @@ export default function LGAForm() {
                   </div>
                 </div>
               </div>
-
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Were provisions for voting by PWDs adhered to?
-                </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("many_young_people", { required: true })}
-                    />
-                    {errors.many_young_people && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("many_young_people", { required: true })}
-                    />
-                    {errors.many_young_people && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
           <div
@@ -632,7 +554,7 @@ export default function LGAForm() {
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
                   Did the LGA/AC Collation Officer collate the results for the
-                  Presidential election by entering the votes scored by each
+                  Governorship election by entering the votes scored by each
                   Political Party in the original copy of Forms EC8B into Form
                   EC8C in figures and words?
                 </label>
@@ -791,7 +713,7 @@ export default function LGAForm() {
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
                   Did the LGA/AC Collation Officer sign, date and stamp the
-                  forms and request the polling agents to countersign?
+                  forms and request the collation center agents to countersign?
                 </label>
                 <div className="flex gap-x-6">
                   <div className="flex">
@@ -896,7 +818,7 @@ export default function LGAForm() {
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
                   Did the LGA/AC Collation Officer distribute copies of the
-                  forms to the polling agents and the Police?
+                  forms to the collation center agents and the Police?
                 </label>
                 <div className="flex gap-x-6">
                   <div className="flex">
