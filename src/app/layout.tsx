@@ -17,6 +17,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>{children}</body>
+
+      {/* <script src="./node_modules/lodash/lodash.min.js"></script> */}
+      {/* <script src="./node_modules/apexcharts/dist/apexcharts.min.js"></script> */}
+      {/* <script src="https://preline.co/assets/js/hs-apexcharts-helpers.js"></script> */}
     </html>
   );
 }

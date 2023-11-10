@@ -25,3 +25,8 @@
     )
     rgb(var(--background-start-rgb));
 } */
+
+.leaflet-container {
+  height: 96%;
+  width: 100%;
+}

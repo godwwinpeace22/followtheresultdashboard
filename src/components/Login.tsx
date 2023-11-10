@@ -6,6 +6,7 @@ type Inputs = {
   name: string;
   state: string;
   lga: string;
+  location: boolean;
 };
 export default function Login({ login }: { login: any }) {
   const [name, setName] = useState("");
@@ -23,17 +24,43 @@ export default function Login({ login }: { login: any }) {
   } = useForm<Inputs>();
   const onSubmit: SubmitHandler<Inputs> = (data) => saveUser(data);
 
-  const saveUser = (data: Inputs) => {
+  const saveUser = async (data: Inputs) => {
     // console.log(data);
 
     if (!data.state || !data?.lga || !data?.name) return;
 
+    const { latitude, longitude } = await getLocation();
+
     localStorage.setItem("name", data.name);
     localStorage.setItem("state", data.state);
     localStorage.setItem("lga", data.lga);
+    localStorage.setItem("lat", latitude?.toString());
+    localStorage.setItem("lon", longitude?.toString());
 
     login();
   };
+
+  async function getLocation(): Promise<{
+    latitude: number;
+    longitude: number;
+  }> {
+    const promise: any = new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject);
+    });
+
+    try {
+      const position = await promise;
+      return {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+    } catch (error) {
+      return {
+        latitude: 0,
+        longitude: 0,
+      };
+    }
+  }
 
   return (
     <div className="bg-white borde flex flex-col w-full max-w-xl pt-20 border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
@@ -119,34 +146,30 @@ export default function Login({ login }: { login: any }) {
 
             {/* End Form Group */}
             {/* Checkbox */}
-            {/* <div className="flex items-center">
-                <div className="flex">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="shrink-0 mt-0.5 border-gray-200 rounded text-blue-600 pointer-events-none focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                  />
-                </div>
-                <div className="ml-3">
-                  <label
-                    htmlFor="remember-me"
-                    className="text-sm dark:text-white"
-                  >
-                    I accept the{" "}
-                    <a
-                      className="text-blue-600 decoration-2 hover:underline font-medium"
-                      href="#"
-                    >
-                      Terms and Conditions
-                    </a>
-                  </label>
-                </div>
-              </div> */}
+            <div className="flex items-center">
+              <div className="flex">
+                <input
+                  id="location"
+                  // name="remember-me"
+                  type="checkbox"
+                  onInput={getLocation}
+                  className="shrink-0 mt-0.5 border-gray-200 rounded text-[#063360] pointer-events-none focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
+                  {...register("location", { required: true })}
+                />
+              </div>
+              <div className="ml-3">
+                <label htmlFor="location" className="text-sm dark:text-white">
+                  Use my location
+                </label>
+              </div>
+            </div>
+            {errors.lga && (
+              <small className="text-red-500">This field is required</small>
+            )}
             {/* End Checkbox */}
             <button
               type="submit"
-              className="py-3 px-4 mt-5 inline-flex justify-center items-center gap-2 rounded-md border border-transparent font-semibold bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
+              className="py-3 px-4 mt-5 inline-flex justify-center items-center gap-2 rounded-md border border-transparent font-semibold bg-[#063360] text-white  focus:outline-none focus:ring-2  focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
             >
               Continue
             </button>

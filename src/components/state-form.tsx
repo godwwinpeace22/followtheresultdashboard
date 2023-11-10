@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { createReport } from "./server-actions";
 import Completed from "./completed";
+import { supabase } from "@/lib/superbase";
 
 type Inputs = {
   arrival_time: string;
@@ -68,15 +69,21 @@ export default function StateForm() {
     const name = localStorage.getItem("name");
     const state = localStorage.getItem("state");
     const lga = localStorage.getItem("lga");
+    const lat = localStorage.getItem("lat");
+    const lon = localStorage.getItem("lon");
 
-    createReport({
-      name: name || "",
-      data: JSON.stringify(data),
-      level: "state",
-      state: state || "",
-      lga: lga || "",
-      date: new Date().toDateString(),
-    })
+    supabase
+      .from("collations")
+      .insert({
+        name: name || "",
+        data: JSON.stringify(data),
+        level: "state",
+        state: state || "",
+        lga: lga || "",
+        date: new Date().toDateString(),
+        lat: lat || "0",
+        lon: lon || "0",
+      })
       .then((res) => {
         if (res.error) {
           alert("An error occured. Please try again later");
@@ -84,8 +91,27 @@ export default function StateForm() {
           setDone(true);
           // setLoading(false)
         }
-      })
-      .catch((err) => console.log(err));
+      });
+
+    // createReport({
+    //   name: name || "",
+    //   data: JSON.stringify(data),
+    //   level: "state",
+    //   state: state || "",
+    //   lga: lga || "",
+    //   lat: lat || "0",
+    //   lon: lon || "0",
+    //   date: new Date().toDateString(),
+    // })
+    //   .then((res) => {
+    //     if (res.error) {
+    //       alert("An error occured. Please try again later");
+    //     } else {
+    //       setDone(true);
+    //       // setLoading(false)
+    //     }
+    //   })
+    //   .catch((err) => console.log(err));
   };
 
   const {
@@ -95,6 +121,41 @@ export default function StateForm() {
     formState: { errors },
   } = useForm<Inputs>();
   const onSubmit: SubmitHandler<Inputs> = (data) => submitReport(data);
+
+  const RadioButtonGroup = ({
+    name,
+    options,
+  }: {
+    name: keyof Inputs;
+    options: { label: string; value: string }[];
+  }) => {
+    return (
+      <div className="flex gap-x-6">
+        {options.map((option: any) => (
+          <div className="flex">
+            <input
+              type="radio"
+              className="shrink-0 mt-0.5 border-gray-200 rounded-full text-[#063360] focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-[#063360] dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
+              value={option.value}
+              {...register(name, {
+                required: true,
+              })}
+            />
+
+            <label
+              htmlFor="hs-radio-group-1"
+              className="text-sm text-gray-500 ml-2 dark:text-gray-400"
+            >
+              {option.label}
+            </label>
+          </div>
+        ))}
+        {errors[name] && (
+          <small className="text-red-500">This field is required</small>
+        )}
+      </div>
+    );
+  };
 
   return (
     <form
@@ -110,12 +171,12 @@ export default function StateForm() {
             id="hs-bordered-heading-one"
           >
             <button
-              className="hs-accordion-toggle hs-accordion-active:text-blue-600 inline-flex items-center gap-x-3 w-full font-semibold text-left text-gray-800 transition py-4 px-5 hover:text-gray-500 dark:hs-accordion-active:text-blue-500 dark:text-gray-200 dark:hover:text-gray-400"
+              className="hs-accordion-toggle hs-accordion-active:text-[#063360] inline-flex items-center gap-x-3 w-full font-semibold text-left text-gray-800 transition py-4 px-5 hover:text-gray-500 dark:hs-accordion-active:text-blue-500 dark:text-gray-200 dark:hover:text-gray-400"
               aria-controls="hs-basic-collapse-one"
             >
               <div>
                 <svg
-                  className="hs-accordion-active:hidden hs-accordion-active:text-blue-600 hs-accordion-active:group-hover:text-blue-600 block w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
+                  className="hs-accordion-active:hidden hs-accordion-active:text-[#063360] hs-accordion-active:group-hover:text-[#063360] block w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
                   width={16}
                   height={16}
                   viewBox="0 0 16 16"
@@ -130,7 +191,7 @@ export default function StateForm() {
                   />
                 </svg>
                 <svg
-                  className="hs-accordion-active:block hs-accordion-active:text-blue-600 hs-accordion-active:group-hover:text-blue-600 hidden w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
+                  className="hs-accordion-active:block hs-accordion-active:text-[#063360] hs-accordion-active:group-hover:text-[#063360] hidden w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
                   width={16}
                   height={16}
                   viewBox="0 0 16 16"
@@ -251,43 +312,13 @@ export default function StateForm() {
                 >
                   Were you permitted to observe? Yes, No
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="permitted_to_observe"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("permitted_to_observe", { required: true })}
-                    />
-                    {errors.permitted_to_observe && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      name="permitted_to_observe"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                    />
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="permitted_to_observe"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
 
               <div className="mb-5">
@@ -371,53 +402,13 @@ export default function StateForm() {
                 >
                   Was the access to the collation center easy for PWDs? Yes, No
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("easy_access_to_collation_center", {
-                        required: true,
-                      })}
-                    />
-                    {errors.easy_access_to_collation_center && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("easy_access_to_collation_center", {
-                        required: true,
-                      })}
-                    />
-                    {errors.easy_access_to_collation_center && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="easy_access_to_collation_center"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
 
               <div className="mb-5">
@@ -428,49 +419,13 @@ export default function StateForm() {
                   Was there a lot of young people aged between the ages of 18-35
                   at the collation center?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("many_young_people", { required: true })}
-                    />
-                    {errors.many_young_people && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("many_young_people", { required: true })}
-                    />
-                    {errors.many_young_people && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="many_young_people"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
 
               <div className="mb-5">
@@ -481,49 +436,13 @@ export default function StateForm() {
                   Was there incidence of open vote buying either near or at the
                   collation center where you were assigned?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("open_vote_buying", { required: true })}
-                    />
-                    {errors.open_vote_buying && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("open_vote_buying", { required: true })}
-                    />
-                    {errors.open_vote_buying && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="open_vote_buying"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
             </div>
           </div>
@@ -532,11 +451,11 @@ export default function StateForm() {
             id="hs-basic-heading-two"
           >
             <button
-              className="hs-accordion-toggle hs-accordion-active:text-blue-600 inline-flex items-center gap-x-3 w-full font-semibold text-left text-gray-800 transition py-4 px-5 hover:text-gray-500 dark:hs-accordion-active:text-blue-500 dark:text-gray-200 dark:hover:text-gray-400"
+              className="hs-accordion-toggle hs-accordion-active:text-[#063360] inline-flex items-center gap-x-3 w-full font-semibold text-left text-gray-800 transition py-4 px-5 hover:text-gray-500 dark:hs-accordion-active:text-blue-500 dark:text-gray-200 dark:hover:text-gray-400"
               aria-controls="hs-basic-collapse-two"
             >
               <svg
-                className="hs-accordion-active:hidden hs-accordion-active:text-blue-600 hs-accordion-active:group-hover:text-blue-600 block w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
+                className="hs-accordion-active:hidden hs-accordion-active:text-[#063360] hs-accordion-active:group-hover:text-[#063360] block w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
                 width={16}
                 height={16}
                 viewBox="0 0 16 16"
@@ -551,7 +470,7 @@ export default function StateForm() {
                 />
               </svg>
               <svg
-                className="hs-accordion-active:block hs-accordion-active:text-blue-600 hs-accordion-active:group-hover:text-blue-600 hidden w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
+                className="hs-accordion-active:block hs-accordion-active:text-[#063360] hs-accordion-active:group-hover:text-[#063360] hidden w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
                 width={16}
                 height={16}
                 viewBox="0 0 16 16"
@@ -582,49 +501,13 @@ export default function StateForm() {
                   materials and reports relating to the election, including Form
                   EC8B?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("process_1", { required: true })}
-                    />
-                    {errors.process_1 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("process_1", { required: true })}
-                    />
-                    {errors.process_1 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="process_1"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -635,49 +518,13 @@ export default function StateForm() {
                   election by entering the votes scored by each Political Party
                   in the original copy of Forms EC60H in figures and words?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("process_2", { required: true })}
-                    />
-                    {errors.process_2 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("process_2", { required: true })}
-                    />
-                    {errors.process_2 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="process_2"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -688,49 +535,13 @@ export default function StateForm() {
                   form EC60H with the Collation Support and Result Verification
                   System (CSRVS) Secretariat?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("process_3", { required: true })}
-                    />
-                    {errors.process_3 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("process_3", { required: true })}
-                    />
-                    {errors.process_3 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="process_3"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -740,49 +551,13 @@ export default function StateForm() {
                   Did the Inec staff announce loudly the votes scored by each
                   Political Party?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("process_4", { required: true })}
-                    />
-                    {errors.process_4 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("process_4", { required: true })}
-                    />
-                    {errors.process_4 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="process_4"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -793,49 +568,13 @@ export default function StateForm() {
                   the political parties agents at the collation center to
                   countersign?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("process_5", { required: true })}
-                    />
-                    {errors.process_5 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("process_5", { required: true })}
-                    />
-                    {errors.process_5 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="process_5"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -845,49 +584,13 @@ export default function StateForm() {
                   Did the inec staff distribute copies of the forms political
                   parties agents and the Police?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("process_6", { required: true })}
-                    />
-                    {errors.process_6 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("process_6", { required: true })}
-                    />
-                    {errors.process_6 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="process_6"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -898,49 +601,13 @@ export default function StateForm() {
                   result directly to the IREV Portal as prescribed by the
                   Commission?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("process_7", { required: true })}
-                    />
-                    {errors.process_7 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("process_7", { required: true })}
-                    />
-                    {errors.process_7 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="process_7"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -950,49 +617,13 @@ export default function StateForm() {
                   Did the inec staff paste the results in an open place for
                   public review at collation center? Choose: Yes or No
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("process_8", { required: true })}
-                    />
-                    {errors.process_8 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("process_8", { required: true })}
-                    />
-                    {errors.process_8 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="process_8"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
             </div>
           </div>
@@ -1001,11 +632,11 @@ export default function StateForm() {
             id="hs-basic-heading-three"
           >
             <button
-              className="hs-accordion-toggle hs-accordion-active:text-blue-600 inline-flex items-center gap-x-3 w-full font-semibold text-left text-gray-800 transition py-4 px-5 hover:text-gray-500 dark:hs-accordion-active:text-blue-500 dark:text-gray-200 dark:hover:text-gray-400"
+              className="hs-accordion-toggle hs-accordion-active:text-[#063360] inline-flex items-center gap-x-3 w-full font-semibold text-left text-gray-800 transition py-4 px-5 hover:text-gray-500 dark:hs-accordion-active:text-blue-500 dark:text-gray-200 dark:hover:text-gray-400"
               aria-controls="hs-basic-collapse-three"
             >
               <svg
-                className="hs-accordion-active:hidden hs-accordion-active:text-blue-600 hs-accordion-active:group-hover:text-blue-600 block w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
+                className="hs-accordion-active:hidden hs-accordion-active:text-[#063360] hs-accordion-active:group-hover:text-[#063360] block w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
                 width={16}
                 height={16}
                 viewBox="0 0 16 16"
@@ -1020,7 +651,7 @@ export default function StateForm() {
                 />
               </svg>
               <svg
-                className="hs-accordion-active:block hs-accordion-active:text-blue-600 hs-accordion-active:group-hover:text-blue-600 hidden w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
+                className="hs-accordion-active:block hs-accordion-active:text-[#063360] hs-accordion-active:group-hover:text-[#063360] hidden w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
                 width={16}
                 height={16}
                 viewBox="0 0 16 16"
@@ -1051,7 +682,7 @@ export default function StateForm() {
                   A
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1069,7 +700,7 @@ export default function StateForm() {
                   AA
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1087,7 +718,7 @@ export default function StateForm() {
                   AAC
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1105,7 +736,7 @@ export default function StateForm() {
                   ADC
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1123,7 +754,7 @@ export default function StateForm() {
                   ADP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1142,7 +773,7 @@ export default function StateForm() {
                   APC
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1161,7 +792,7 @@ export default function StateForm() {
                   APGA
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1180,7 +811,7 @@ export default function StateForm() {
                   APM
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1198,7 +829,7 @@ export default function StateForm() {
                   APP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1217,7 +848,7 @@ export default function StateForm() {
                   BP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1236,7 +867,7 @@ export default function StateForm() {
                   LP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1255,7 +886,7 @@ export default function StateForm() {
                   NNPP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1274,7 +905,7 @@ export default function StateForm() {
                   NRM
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1293,7 +924,7 @@ export default function StateForm() {
                   PDP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1312,7 +943,7 @@ export default function StateForm() {
                   PRP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1331,7 +962,7 @@ export default function StateForm() {
                   SDP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1350,7 +981,7 @@ export default function StateForm() {
                   YPP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1369,7 +1000,7 @@ export default function StateForm() {
                   ZLP
                 </label>
                 <input
-                  type="text"
+                  type="number"
                   id="input-label"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                   placeholder=""
@@ -1387,11 +1018,11 @@ export default function StateForm() {
             id="hs-basic-heading-three"
           >
             <button
-              className="hs-accordion-toggle hs-accordion-active:text-blue-600 inline-flex items-center gap-x-3 w-full font-semibold text-left text-gray-800 transition py-4 px-5 hover:text-gray-500 dark:hs-accordion-active:text-blue-500 dark:text-gray-200 dark:hover:text-gray-400"
+              className="hs-accordion-toggle hs-accordion-active:text-[#063360] inline-flex items-center gap-x-3 w-full font-semibold text-left text-gray-800 transition py-4 px-5 hover:text-gray-500 dark:hs-accordion-active:text-blue-500 dark:text-gray-200 dark:hover:text-gray-400"
               aria-controls="hs-basic-collapse-three"
             >
               <svg
-                className="hs-accordion-active:hidden hs-accordion-active:text-blue-600 hs-accordion-active:group-hover:text-blue-600 block w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
+                className="hs-accordion-active:hidden hs-accordion-active:text-[#063360] hs-accordion-active:group-hover:text-[#063360] block w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
                 width={16}
                 height={16}
                 viewBox="0 0 16 16"
@@ -1406,7 +1037,7 @@ export default function StateForm() {
                 />
               </svg>
               <svg
-                className="hs-accordion-active:block hs-accordion-active:text-blue-600 hs-accordion-active:group-hover:text-blue-600 hidden w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
+                className="hs-accordion-active:block hs-accordion-active:text-[#063360] hs-accordion-active:group-hover:text-[#063360] hidden w-3 h-3 text-gray-600 group-hover:text-gray-500 dark:text-gray-400"
                 width={16}
                 height={16}
                 viewBox="0 0 16 16"
@@ -1435,49 +1066,13 @@ export default function StateForm() {
                   Was there any occurrence of intimidation by political party
                   supporters at the collation center where you observed?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("violence_1", { required: true })}
-                    />
-                    {errors.violence_1 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("violence_1", { required: true })}
-                    />
-                    {errors.violence_1 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="violence_1"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -1505,49 +1100,13 @@ export default function StateForm() {
                   Was there any issue of election related violence at the
                   collation center?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("violence_3", { required: true })}
-                    />
-                    {errors.violence_3 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("violence_3", { required: true })}
-                    />
-                    {errors.violence_3 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="violence_3"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -1575,49 +1134,13 @@ export default function StateForm() {
                   Did the Police and security agencies step in to stop the
                   violence erupting?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("violence_5", { required: true })}
-                    />
-                    {errors.violence_5 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("violence_5", { required: true })}
-                    />
-                    {errors.violence_5 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="violence_5"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -1627,49 +1150,13 @@ export default function StateForm() {
                   Was there any issue of election related violence after the
                   election
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("violence_6", { required: true })}
-                    />
-                    {errors.violence_6 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("violence_6", { required: true })}
-                    />
-                    {errors.violence_6 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="violence_6"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -1678,49 +1165,13 @@ export default function StateForm() {
                 >
                   Were there any casualties?
                 </label>
-                <div className="flex gap-x-6">
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-1"
-                      defaultChecked
-                      {...register("violence_7", { required: true })}
-                    />
-                    {errors.violence_7 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-1"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      Yes
-                    </label>
-                  </div>
-                  <div className="flex">
-                    <input
-                      type="radio"
-                      // name="hs-radio-group"
-                      className="shrink-0 mt-0.5 border-gray-200 rounded-full text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                      id="hs-radio-group-2"
-                      {...register("violence_7", { required: true })}
-                    />
-                    {errors.violence_7 && (
-                      <small className="text-red-500">
-                        This field is required
-                      </small>
-                    )}
-                    <label
-                      htmlFor="hs-radio-group-2"
-                      className="text-sm text-gray-500 ml-2 dark:text-gray-400"
-                    >
-                      No
-                    </label>
-                  </div>
-                </div>
+                <RadioButtonGroup
+                  name="violence_7"
+                  options={[
+                    { value: "on", label: "Yes" },
+                    { value: "off", label: "No" },
+                  ]}
+                />
               </div>
               <div className="mb-5">
                 <label
@@ -1745,7 +1196,7 @@ export default function StateForm() {
               <div className="flex justify-center items-center mt-20 mb-10">
                 <button
                   type="submit"
-                  className="mx-auto w-60 self-center py-3 px-4 inline-flex justify-center items-center gap-2 rounded-full border border-transparent font-semibold bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
+                  className="mx-auto w-60 self-center py-3 px-4 inline-flex justify-center items-center gap-2 rounded-full border border-transparent font-semibold bg-[#063360] text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
                 >
                   {loading && (
                     <div>

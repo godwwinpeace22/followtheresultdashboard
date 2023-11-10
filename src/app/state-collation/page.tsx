@@ -15,7 +15,7 @@ export default function Page() {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-10 lg:shadow-md">
+    <div className="container max-w-4xl mx-auto px-4 py-10 ">
       <Common />
       <div className="flex justify-center items-center mb-20">
         <img src="/followtheresultlogo.png" alt="" style={{ width: 200 }} />
@@ -28,8 +28,11 @@ export default function Page() {
         State Collation
       </h1>
       <p className="text-center text-gray-500">
-        This form is to aid election observers and monitors send in their <br />
-        observation on the election day across all LGAs
+        This FollowTheResult tech-form is to aid election observers to send in{" "}
+        <br />
+        Polling unit Results on election day across all polling units to FTR{" "}
+        <br />
+        Central Command Center.
       </p>
 
       {!showForm && !showLogin && (
@@ -37,7 +40,7 @@ export default function Page() {
           <div className="flex justify-center items-center mt-20">
             <button
               type="button"
-              className="mx-auto w-60 self-center py-3 px-4 inline-flex justify-center items-center gap-2 rounded-full border border-transparent font-semibold bg-blue-500 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
+              className="mx-auto w-60 self-center py-3 px-4 inline-flex justify-center items-center gap-2 rounded-full border border-transparent font-semibold bg-[#063360] text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
               onClick={() => setShowLogin(true)}
             >
               Get Started
