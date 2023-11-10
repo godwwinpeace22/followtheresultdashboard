@@ -137,7 +137,7 @@ export default function Page() {
   return (
     <div className="">
       <div className="grid gap-4 grid-cols-1 mt-5">
-        <div className=" py-2 borde">
+        <div className=" borde">
           <HeaderTabs active="result" bg="bg-[green]" />
 
           <div className="grid gap-4 grid-cols-3 mt-5 border border-[#063360] px-2 py-2 rounded-md">
@@ -231,7 +231,7 @@ export default function Page() {
 
         {/* <div
           className="rounded-md border-t-8 border-b-2 border-x-4 border-[#063360]"
-          style={{ height: 500 }}
+          style={{ height: 602 }}
         >
           <p className="bg-[#063360] px-4 text-white text-xs pb-1">
             Opening time of polling units

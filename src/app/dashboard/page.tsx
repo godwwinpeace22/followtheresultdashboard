@@ -210,7 +210,7 @@ export default function Page() {
   return (
     <div className="">
       <div className="grid gap-4 grid-cols-2 mt-5">
-        <div className=" py- borde">
+        <div className="flex-1 borde">
           <HeaderTabs active="" />
           <div className="grid gap-4 grid-cols-3 mt-3 border border-[#063360] px-2 py-2 rounded-md">
             <div className="flex flex-col">
@@ -297,13 +297,13 @@ export default function Page() {
 
           <div className="grid gap-5 grid-cols-[1fr_2fr] mt-5 borde">
             <div className="gap-5 flex-1 flex flex-col">
-              <div className="flex flex-col px-5 py-5 rounded-md shadow-md  h-28 bg-[#063360] justify-center items-center">
+              <div className="flex flex-1 flex-col px-5 py-5 rounded-md shadow-md  h-28 bg-[#063360] justify-center items-center">
                 <h3 className="text-white text-4xl font-bold">
                   {calcObservers()}
                 </h3>
                 <h4 className="text-white text-xs">Observers</h4>
               </div>
-              <div className="flex flex-col px-5 py-5 rounded-md shadow-md h-28 bg-[#063360] justify-center items-center">
+              <div className="flex flex-1 flex-col px-5 py-5 rounded-md shadow-md h-28 bg-[#063360] justify-center items-center">
                 <h3 className="text-white text-4xl font-bold">
                   {!!state ? calcPollingUnits() : calcLgas()}
                 </h3>
@@ -330,8 +330,8 @@ export default function Page() {
         </div>
 
         <div
-          className="rounded-md border-t-8 border-b-2 border-x-4 border-[#063360]"
-          style={{ height: 500 }}
+          className="flex-1 rounded-md border-t-8 border-b-2 border-x-4 border-[#063360]"
+          // style={{ height: 562 }}
         >
           <p className="bg-[#063360] px-4 text-white text-xs pb-1">
             Opening time of polling units
