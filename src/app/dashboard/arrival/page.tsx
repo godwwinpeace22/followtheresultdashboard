@@ -7,6 +7,7 @@ import { Pie } from "react-chartjs-2";
 import { uniqBy } from "lodash";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
+import StatBoxes from "@/components/StatBoxes";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -285,28 +286,11 @@ export default function Page() {
           </div>
 
           <div className="grid gap-5 grid-cols-[1fr_2fr] mt-5 borde">
-            <div className="gap-5 flex-1 flex flex-col">
-              <div className="flex flex-1 flex-col px-5 py-5 rounded-md shadow-md  h-28 bg-[#063360] justify-center items-center">
-                <h3 className="text-white text-4xl font-bold">
-                  {calcObservers()}
-                </h3>
-                <h4 className="text-white text-xs text-center">Observers</h4>
-              </div>
-              <div className="flex flex-1 flex-col px-5 py-5 rounded-md shadow-md h-28 bg-[#063360] justify-center items-center">
-                <h3 className="text-white text-4xl font-bold">
-                  {!!state ? calcPollingUnits() : calcLgas()}
-                </h3>
-                <h4 className="text-white text-xs text-center">
-                  {!!state ? "Polling units" : "L.G.As"} Observed
-                </h4>
-              </div>
-            </div>
+            <StatBoxes state={state} lga={lga} data={data} />
             <div
               className="border flex-1 py-2 flex flex-col pt-1 border-[#063360] rounded-md shadow-md"
               style={{ height: 280 }}
             >
-              {/* <p className="text-center text-xs">Charts</p> */}
-
               <Pie options={chartData.options} data={chartData.data} />
             </div>
           </div>

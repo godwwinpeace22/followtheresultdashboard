@@ -10,19 +10,17 @@ export default function HeaderTabs({
 }) {
   type TabProps = {
     text: string;
-    // active: boolean;
     bg?: string;
-    // onClick: () => void;
   };
-  const Tab = ({ text }: TabProps) => {
+  const Tab = ({ text, bg: bgc }: TabProps) => {
     return (
       <Link
         href={`/dashboard/${text}`}
         className={` rounded-lg border w-full capitalize ${
-          active === text ? `shadow- ${bg} text-white` : "text-gray-500"
+          active === text ? `shadow- ${bgc} text-white` : `text-white ${bgc}`
         } justify-center items-center text-center px-8 py-3 cursor-pointer hover:shadow-sm`}
       >
-        <span className="text-center text-xs">{text}</span>
+        <span className="text-center text-sm">{text}</span>
       </Link>
     );
   };
@@ -48,29 +46,27 @@ export default function HeaderTabs({
           <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
-        <span className="text-center text-xs">Home</span>
+        <span className="text-center text-sm">Home</span>
       </Link>
     );
   };
 
   const tabs = [
-    { text: "arrival", active: false, bg: "#063360", onClick: () => {} },
-    { text: "process", active: false, onClick: () => {} },
-    { text: "violence", active: false, onClick: () => {} },
-    { text: "result", active: false, onClick: () => {} },
+    { text: "arrival", active: false, bg: "bg-[#db851c]" },
+    { text: "process", active: false, bg: "bg-[#898a8c]" },
+    { text: "violence", active: false, bg: "bg-[#f50707]" },
+    { text: "result", active: false, bg: "bg-[#0a952f]" },
   ];
 
   return (
     <div className="flex flex-row gap-1 items-center justify-between">
       {active ? (
-        // <div>
         <>
           <HomeTab />
-          <Tab text={active} />
+          <Tab text={active} bg={bg} />
         </>
       ) : (
-        // </div>
-        tabs.map((tab, i) => <Tab key={i} text={tab.text} />)
+        tabs.map((tab, i) => <Tab key={i} text={tab.text} bg={tab.bg} />)
       )}
     </div>
   );

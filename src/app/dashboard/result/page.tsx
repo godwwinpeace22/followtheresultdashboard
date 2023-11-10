@@ -4,8 +4,10 @@ import { StatesAndLGA } from "@/lib/states-and-lga";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
+import dynamic from "next/dynamic";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 export default function Page() {
   const [state, setState] = useState("Kogi");
@@ -117,7 +119,7 @@ export default function Page() {
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "collations" },
           (payload) => {
-            console.log("Change received!", payload.new);
+            // console.log("Change received!", payload.new);
             // setData([...data, payload?.new]);
             setNewData(payload.new);
           }
@@ -183,7 +185,7 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="flex flex-col mt-5">
+          <div className=" grid gap-1 grid-cols-2 mt-5">
             <div className="-m-1.5 overflow-x-auto">
               <div className="p-1.5 min-w-full inline-block align-middle">
                 <div className="border rounded-lg shadow overflow-hidden dark:border-gray-700 dark:shadow-gray-900">
@@ -219,6 +221,27 @@ export default function Page() {
                   </table>
                 </div>
               </div>
+            </div>
+
+            <div className="shadow-m">
+              <Chart
+                type="bar"
+                series={[
+                  {
+                    name: "Score",
+                    data: Object.values(allResults),
+                  },
+                ]}
+                options={{
+                  chart: {
+                    id: "basic-bar",
+                  },
+                  xaxis: {
+                    categories: Object.keys(allResults),
+                  },
+                  colors: ["#063360"],
+                }}
+              />
             </div>
           </div>
         </div>

@@ -273,7 +273,7 @@ export default function PolingUnitForm() {
                   htmlFor="input-label"
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
-                  What time did you arrive the collation center?
+                  What time did you arrive the polling unit?
                 </label>
                 <input
                   type="time"
@@ -365,7 +365,7 @@ export default function PolingUnitForm() {
                   htmlFor="input-label"
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
-                  How many security officials were at the collation center?
+                  How many security officials were at the polling unit?
                 </label>
                 <input
                   type="number"
@@ -383,7 +383,7 @@ export default function PolingUnitForm() {
                   htmlFor="input-label"
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
-                  How many party agents were at the collation center?
+                  How many party agents were at the polling unit?
                 </label>
                 <input
                   type="number"
@@ -402,7 +402,7 @@ export default function PolingUnitForm() {
                   htmlFor="input-label"
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
-                  Was the access to the collation center easy for PWDs?
+                  Was the access to the polling unit easy for PWDs?
                 </label>
                 <div className="flex gap-x-6">
                   <RadioButtonGroup
@@ -421,7 +421,7 @@ export default function PolingUnitForm() {
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
                   Was there a lot of young people aged between the ages of 18-35
-                  at the collation center?
+                  at the polling unit?
                 </label>
                 <div className="">
                   <RadioButtonGroup
@@ -440,7 +440,7 @@ export default function PolingUnitForm() {
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
                   Was there incidence of open vote buying either near or at the
-                  collation center where you were assigned?
+                  polling unit where you were assigned?
                 </label>
                 <RadioButtonGroup
                   name="open_vote_buying"
@@ -1070,7 +1070,7 @@ export default function PolingUnitForm() {
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
                   Was there any occurrence of intimidation by political party
-                  supporters at the collation center where you observed?
+                  supporters at the polling unit where you observed?
                 </label>
                 <RadioButtonGroup
                   name="violence_1"
@@ -1105,7 +1105,7 @@ export default function PolingUnitForm() {
                   className="block text-sm font-medium mb-2 dark:text-white"
                 >
                   Was there any issue of election related violence at the
-                  collation center?
+                  polling unit?
                 </label>
                 <RadioButtonGroup
                   name="violence_3"

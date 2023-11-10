@@ -87,6 +87,7 @@ export default function Map({ data }: { data: data }) {
         <Marker
           position={[Number(item.lat), Number(item.lon)]}
           icon={icons[item?.icon]}
+          key={i}
         >
           <Popup>{item?.popupText}</Popup>
         </Marker>

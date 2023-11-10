@@ -2,19 +2,39 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { StatesAndLGA } from "@/lib/states-and-lga";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { Pie } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Title,
+  BarElement,
+  LinearScale,
+  CategoryScale,
+} from "chart.js";
+import { Bar, Pie } from "react-chartjs-2";
 import { uniqBy } from "lodash";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
+import StatBoxes from "@/components/StatBoxes";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 export default function Page() {
   // const [currTab, setCurrTab] = useState("home");
-  const [currStat, setCurrStat] = useState("stat2");
+  const [currStat, setCurrStat] = useState("stat1");
   const [state, setState] = useState("");
   const [lga, setLga] = useState("");
   const [data, setData] = useState<any[]>([]);
@@ -41,24 +61,88 @@ export default function Page() {
     []
   );
 
-  const calcObservers = useCallback(() => {
-    const d = data.filter((a) => (state ? a.state === state : true));
-    const count = uniqBy(d, "name")?.length;
-
-    return count;
-  }, [data, lga, state]);
-
-  const calcLgas = useCallback(() => {
-    // const d = data.filter(a => a.state === state);
-    return uniqBy(data, "lga")?.length;
-  }, [data, lga, state]);
-
-  const calcPollingUnits = useCallback(() => {
-    const d = data.filter((a) =>
-      !state ? true : a.state === state && a.lga === lga
+  const calcPollingUnitObservers = useCallback(() => {
+    const d = data.filter(
+      (a) =>
+        (!!state ? a.state === state : true) &&
+        (!!lga ? a.lga === lga : true) &&
+        a.level === "polling_unit"
     );
-    return uniqBy(d, "lga")?.length;
+    return uniqBy(d, "name")?.length;
   }, [data, lga, state]);
+
+  const calcLgaObservers = useCallback(() => {
+    const d = data.filter(
+      (a) =>
+        (!!state ? a.state === state : true) &&
+        (!!lga ? a.lga === lga : true) &&
+        a.level === "lga"
+    );
+    return uniqBy(d, "name")?.length;
+  }, [data, lga, state]);
+
+  const calcStateObservers = useCallback(() => {
+    const d = data.filter(
+      (a) =>
+        (!!state ? a.state === state : true) &&
+        (!!lga ? a.lga === lga : true) &&
+        a.level === "state"
+    );
+    return uniqBy(d, "name")?.length;
+  }, [data, lga, state]);
+
+  // Function to plot a bar chart
+  function plotBarChart(times: string[]): {
+    counts: number[];
+    labels: string[];
+    percentages: string[];
+  } {
+    // Create an array to store the counts for each time interval
+    const counts: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    // Count the occurrences of each time interval
+    times.forEach((time) => {
+      const hour = parseInt(time.split(":")[0], 10);
+
+      if (hour >= 7 && hour < 8) counts[0]++;
+      else if (hour >= 8 && hour < 9) counts[1]++;
+      else if (hour >= 9 && hour < 10) counts[2]++;
+      else if (hour >= 10 && hour < 11) counts[3]++;
+      else if (hour >= 11 && hour < 12) counts[4]++;
+      else if (hour >= 12 && hour < 13) counts[5]++;
+      else if (hour >= 13 && hour < 14) counts[6]++;
+      else if (hour >= 14 && hour < 15) counts[7]++;
+      else if (hour >= 15 && hour < 16) counts[8]++;
+      else if (hour >= 16 && hour <= 17) counts[9]++;
+      else counts[10]++;
+      // Add more conditions for additional time intervals as needed
+    });
+
+    // Calculate the total count
+    const totalCount = counts.reduce((acc, count) => acc + count, 0);
+
+    // Calculate percentages
+    const percentages = counts.map((count) =>
+      ((count / totalCount) * 100).toFixed(1)
+    );
+
+    // Create labels for the chart
+    const labels: string[] = [
+      "7-8am",
+      "8-9am",
+      "9-10am",
+      "10-11am",
+      "11am-12pm",
+      "12-1pm",
+      "1-2pm",
+      "2-3pm",
+      "3-4pm",
+      "4-5pm",
+      "no show",
+    ]; // Add more labels as needed
+
+    return { counts, labels, percentages };
+  }
 
   function calcData({
     positiveText,
@@ -123,15 +207,149 @@ export default function Page() {
     ]);
   }
 
+  function calcBarChartData({
+    positiveText,
+    negativeText,
+    label,
+    value,
+    swapColors,
+  }: {
+    positiveText: string;
+    negativeText: string;
+    label: string;
+    value: string;
+    swapColors?: boolean;
+  }) {
+    const parsed = data
+      ?.filter(
+        (d) =>
+          (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
+      )
+      ?.filter((d) => d.level === "lga")
+      .map((d) => ({ ...d, data: JSON.parse(d.data) }));
+
+    const bg = [
+      "rgba(54, 235, 163, 0.2)",
+      "rgba(54, 235, 163, 0.2)",
+      "rgba(54, 235, 163, 0.2)",
+      "rgba(255, 99, 132, 0.2)",
+    ];
+
+    const borderColors = [
+      "#36ebb5",
+      "#36ebb5",
+      "#36ebb5",
+      "rgba(255, 99, 132, 1)",
+    ];
+
+    // Define colors for different time intervals
+    const colors = {
+      morning: {
+        background: "rgba(0, 128, 0, 0.8)", // Green
+        border: "rgba(0, 128, 0, 1)",
+      },
+      afternoon: {
+        background: "rgba(255, 165, 0, 0.8)", // Orange
+        border: "rgba(255, 165, 0, 1)",
+      },
+      evening: {
+        background: "rgba(255, 0, 0, 0.8)", // Red
+        border: "rgba(255, 0, 0, 1)",
+      },
+    };
+
+    const times: string[] = parsed.map((p) => p.data[value]);
+    const { counts, labels, percentages } = plotBarChart(times);
+
+    const datasetColors = labels.map((label) => {
+      const timeRange = label.split("-")[0].trim(); // Extract the start time
+      const hour = parseInt(timeRange.split(":")[0], 10);
+
+      if (hour >= 7 && hour < 10) {
+        return colors.morning;
+      } else if (hour >= 10 && hour < 14) {
+        return colors.afternoon;
+      } else {
+        return colors.evening;
+      }
+    });
+    // console.log({ times, counts, percentages });
+
+    setChartData({
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: label,
+            data: percentages,
+            backgroundColor: datasetColors.map((color) => color.background),
+            borderColor: datasetColors.map((color) => color.border),
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        // responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function (value: any) {
+                return value + "%";
+              },
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context: any) {
+                const label = context.dataset.label || "";
+                const value = (context.parsed.y || 0)?.toFixed(1) + "%";
+                return `${label}: ${value}`;
+              },
+            },
+          },
+        },
+        // maintainAspectRatio: false, // Allow the chart to scale to the specified height
+        responsive: true,
+        height: 300,
+      },
+    });
+
+    setCoordinates([
+      ...parsed
+        .filter((d) => d.data[value] == "on")
+        .map((i) => ({
+          lat: i?.lat,
+          lon: i?.lon,
+          icon: "RedIcon",
+          popupText: negativeText,
+        })),
+      ...parsed
+        .filter((d) => d.data[value] == "off")
+        .map((i) => ({
+          lat: i?.lat,
+          lon: i?.lon,
+          icon: "BlackIcon",
+          popupText: positiveText,
+        })),
+    ]);
+  }
+
   function calChartData() {
     if (currStat === "stat1") {
-      calcData({
+      calcBarChartData({
         positiveText: "Yes",
         negativeText: "No",
-        label: "Electronic transmission of result",
-        value: "process_7",
+        label: "Arrival of INEC staff",
+        value: "inec_staff_arrival_time",
       });
     }
+
     if (currStat === "stat2") {
       calcData({
         positiveText: "Yes",
@@ -143,10 +361,10 @@ export default function Page() {
     }
 
     if (currStat === "stat3") {
-      calcData({
+      calcBarChartData({
         positiveText: "Yes",
         negativeText: "No",
-        label: "Electronic transmission of result",
+        label: "BVAS time to accredit",
         value: "process_7",
       });
     }
@@ -259,14 +477,14 @@ export default function Page() {
           </div>
 
           <div className="grid gap-1 grid-cols-2 mt-5 border border-[#063360] px-2 py-2 rounded-md">
-            {/* <span
+            <span
               className={`text-xs cursor-pointer ${
                 currStat == "stat1" ? "text-[#604606]" : "text-[#063360]"
               }`}
               onClick={() => setCurrStat("stat1")}
             >
               Polling unit opening time
-            </span> */}
+            </span>
             <span
               className={`text-xs cursor-pointer ${
                 currStat === "stat2" ? "text-[#604606]" : "text-[#063360]"
@@ -289,42 +507,59 @@ export default function Page() {
               }`}
               onClick={() => setCurrStat("stat4")}
             >
-              Electronically transmit result to INEC servers
+              Electronically transmit result
             </span>
           </div>
 
           <div className="grid gap-5 grid-cols-[1fr_2fr] mt-5 borde">
-            <div className="gap-5 flex-1 flex flex-col">
-              <div className="flex flex-1 flex-col px-5 py-5 rounded-md shadow-md  h-28 bg-[#063360] justify-center items-center">
-                <h3 className="text-white text-4xl font-bold">
-                  {calcObservers()}
-                </h3>
-                <h4 className="text-white text-xs text-center">Observers</h4>
-              </div>
-              <div className="flex flex-1 flex-col px-5 py-5 rounded-md shadow-md h-28 bg-[#063360] justify-center items-center">
-                <h3 className="text-white text-4xl font-bold">
-                  {!!state ? calcPollingUnits() : calcLgas()}
-                </h3>
-                <h4 className="text-white text-xs text-center">
-                  {!!state ? "Polling units" : "L.G.As"} Observed
-                </h4>
-              </div>
-            </div>
+            <StatBoxes state={state} lga={lga} data={data} />
             <div
               className="border flex-1 py-2 flex flex-col pt-1 border-[#063360] rounded-md shadow-md"
-              style={{ height: 280 }}
+              // style={{ height: 300 }}
             >
-              {/* <p className="text-center text-xs">Charts</p> */}
-
-              <Pie options={chartData.options} data={chartData.data} />
+              {currStat === "stat1" || currStat === "stat3" ? (
+                // <Bar options={chartData.options} data={chartData.data} />
+                <Chart
+                  series={[
+                    {
+                      name: "",
+                      data: chartData?.data?.datasets?.[0]?.data,
+                    },
+                  ]}
+                  options={{
+                    chart: {
+                      id: "basic-bar",
+                    },
+                    xaxis: {
+                      categories: chartData?.data?.labels,
+                    },
+                    colors: [
+                      function ({
+                        value,
+                        seriesIndex,
+                        dataPointIndex,
+                        w,
+                      }: any) {
+                        if (dataPointIndex <= 3) {
+                          return "#0fe665";
+                        } else if (dataPointIndex <= 6) {
+                          return "#d9a90d";
+                        } else {
+                          return "#ea1109";
+                        }
+                      },
+                    ],
+                  }}
+                  type="bar"
+                />
+              ) : (
+                <Pie options={chartData.options} data={chartData.data} />
+              )}
             </div>
           </div>
         </div>
 
-        <div
-          className="flex-1 rounded-md border-t-8 border-b-2 border-x-4 border-[#063360]"
-          // style={{ height: 562 }}
-        >
+        <div className="flex-1 rounded-md border-t-8 border-b-2 border-x-4 border-[#063360]">
           <p className="bg-[#063360] px-4 text-white text-xs pb-1">
             {currStat == "stat2" && "Vote buying observed"}
             {currStat == "stat4" && "Electronic transmission of results"}
