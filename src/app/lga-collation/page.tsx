@@ -28,10 +28,10 @@ export default function Page() {
         LGA Collation
       </h1>
       <p className="text-center text-gray-500">
-        This FollowTheResult tech-form is to aid election observers to send in{" "}
+        This FollowTheResult Tech-Form is to aid Election Observers to send in{" "}
         <br />
-        Polling unit Results on election day across all polling units to FTR{" "}
-        <br />
+        L.G.A Collation Center Results on election day across all L.G.A
+        collation centers to the FTR <br />
         Central Command Center.
       </p>
 
