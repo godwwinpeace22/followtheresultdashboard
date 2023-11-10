@@ -28,7 +28,7 @@ export default function Page() {
         Polling Unit Observer
       </h1>
       <p className="text-center text-gray-500">
-        This FollowTheResult Tech-Form is to aid election observers to send in{" "}
+        This FollowTheResult Tech-Form is to aid Election Observers to send in{" "}
         <br />
         Polling Unit Results on Election day across all polling units to the FTR{" "}
         <br />
