@@ -1,17 +1,11 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
-import { statesGeoJson } from "@/components/nigerian-states";
+import React, { useEffect, useMemo, useState } from "react";
 import { StatesAndLGA } from "@/lib/states-and-lga";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { Pie } from "react-chartjs-2";
-import { uniqBy } from "lodash";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
-
-const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 export default function Page() {
   const [state, setState] = useState("Kogi");

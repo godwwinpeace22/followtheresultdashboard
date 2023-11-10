@@ -1,7 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { statesGeoJson } from "@/components/nigerian-states";
 import { StatesAndLGA } from "@/lib/states-and-lga";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Pie } from "react-chartjs-2";
@@ -10,8 +9,6 @@ import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
-
-const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 export default function Page() {
   // const [currTab, setCurrTab] = useState("home");
@@ -310,28 +307,22 @@ export default function Page() {
                 <h3 className="text-white text-4xl font-bold">
                   {calcObservers()}
                 </h3>
-                <h4 className="text-white text-xs">Observers</h4>
+                <h4 className="text-white text-xs text-center">Observers</h4>
               </div>
               <div className="flex flex-1 flex-col px-5 py-5 rounded-md shadow-md h-28 bg-[#063360] justify-center items-center">
                 <h3 className="text-white text-4xl font-bold">
                   {!!state ? calcPollingUnits() : calcLgas()}
                 </h3>
-                <h4 className="text-white text-xs">
+                <h4 className="text-white text-xs text-center">
                   {!!state ? "Polling units" : "L.G.As"} Observed
                 </h4>
               </div>
             </div>
             <div
-              className="border flex-1 flex flex-col pt-1 border-[#063360] rounded-md shadow-md"
-              //   style={{ height: 280 }}
+              className="border flex-1 py-2 flex flex-col pt-1 border-[#063360] rounded-md shadow-md"
+              style={{ height: 280 }}
             >
-              <p className="text-center text-xs">Charts</p>
-              {/* <Chart
-                options={chartData.options}
-                series={chartData?.series}
-                type={chartData?.type}
-                // width="500"
-              /> */}
+              {/* <p className="text-center text-xs">Charts</p> */}
 
               <Pie options={chartData.options} data={chartData.data} />
             </div>
@@ -343,7 +334,11 @@ export default function Page() {
           style={{ height: 602 }}
         >
           <p className="bg-[#063360] px-4 text-white text-xs pb-1">
-            Opening time of polling units
+            {currStat == "casualties" &&
+              "Severe injury, loss of life or destruction of electoral materials"}
+            {currStat == "violence_during" && "Violence during election"}
+            {currStat == "violence_after" && "Violence after election"}
+            {currStat == "voter_intimidation" && "Voter intimidation"}
           </p>
 
           <Map data={coordinates} />

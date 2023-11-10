@@ -83,8 +83,11 @@ export default function Map({ data }: { data: data }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {data?.map((item) => (
-        <Marker position={[9.047821, 7.475961]} icon={icons[item?.icon]}>
+      {data?.map((item, i) => (
+        <Marker
+          position={[Number(item.lat), Number(item.lon)]}
+          icon={icons[item?.icon]}
+        >
           <Popup>{item?.popupText}</Popup>
         </Marker>
       ))}
