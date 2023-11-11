@@ -72,7 +72,7 @@ export default function Page() {
 
     // Count the occurrences of each time interval
     times.forEach((time) => {
-      const hour = parseInt(time.split(":")[0], 10);
+      const hour = parseInt(time?.split(":")[0], 10);
 
       if (hour >= 7 && hour < 8) counts[0]++;
       else if (hour >= 8 && hour < 9) counts[1]++;
@@ -240,6 +240,7 @@ export default function Page() {
 
     const times: string[] = parsed.map((p) => p.data[value]);
     const { counts, labels, percentages } = plotBarChart(times);
+    // console.log({ times, parsed });
 
     const datasetColors = labels.map((label) => {
       const timeRange = label.split("-")[0].trim(); // Extract the start time
