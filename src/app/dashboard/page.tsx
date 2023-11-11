@@ -132,13 +132,17 @@ export default function Page() {
     const parsed = data
       ?.filter(
         (d) =>
-          (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
+          d.level === level &&
+          (!!state ? d.state == state : true) &&
+          (!!lga ? d.lga == lga : true)
       )
-      ?.filter((d) => d.level == level)
+      // ?.filter((d) => d.level == level)
       .map((d) => ({ ...d, data: JSON.parse(d.data) }));
 
     const yes = parsed.filter((d) => d.data[value] == "on")?.length;
     const no = parsed.filter((d) => d.data[value] == "off")?.length;
+
+    // console.log({ parsed, yes, no });
 
     const bg = ["rgba(255, 99, 132, 0.2)", "rgba(54, 235, 163, 0.2)"];
 
@@ -161,20 +165,20 @@ export default function Page() {
 
     setCoordinates([
       ...parsed
-        .filter((d) => d.data[value] == "on")
+        .filter((d) => (d.data[value] == swapColors ? "off" : "on"))
         .map((i) => ({
           lat: i?.lat,
           lon: i?.lon,
           icon: "RedIcon",
-          popupText: negativeText,
+          popupText: `${label}: ${negativeText} (${i?.lga})`,
         })),
       ...parsed
-        .filter((d) => d.data[value] == "off")
+        .filter((d) => (d.data[value] == swapColors ? "on" : "off"))
         .map((i) => ({
           lat: i?.lat,
           lon: i?.lon,
           icon: "BlackIcon",
-          popupText: positiveText,
+          popupText: `${label}: ${positiveText} (${i?.lga})`,
         })),
     ]);
   }
@@ -197,9 +201,11 @@ export default function Page() {
     const parsed = data
       ?.filter(
         (d) =>
-          (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
+          d.level === level &&
+          (!!state ? d.state == state : true) &&
+          (!!lga ? d.lga == lga : true)
       )
-      ?.filter((d) => d.level === level)
+      // ?.filter((d) => d.level === level)
       .map((d) => ({ ...d, data: JSON.parse(d.data) }));
 
     const bg = [
@@ -319,30 +325,31 @@ export default function Page() {
       calcBarChartData({
         positiveText: "Yes",
         negativeText: "No",
-        label: "Arrival of INEC staff",
+        label: "Collation center opening time",
         value: "inec_staff_arrival_time",
         level: "lga",
       });
     }
 
     if (currStat === "stat2") {
-      calcData({
+      calcBarChartData({
         positiveText: "Yes",
         negativeText: "No",
-        label: "Open vote buying",
-        value: "open_vote_buying",
+        label: "Polling unit opening time",
+        value: "inec_staff_arrival_time",
         swapColors: true,
         level: "polling_unit",
       });
     }
 
     if (currStat === "stat3") {
-      calcBarChartData({
+      calcData({
         positiveText: "Yes",
         negativeText: "No",
-        label: "BVAS time to accredit",
-        value: "process_7",
-        level: "lga",
+        label: "Vote buying observed",
+        value: "open_vote_buying",
+        level: "polling_unit",
+        swapColors: true,
       });
     }
     if (currStat == "stat4") {
@@ -351,7 +358,7 @@ export default function Page() {
         negativeText: "No",
         label: "Electronic transmission of result",
         value: "process_7",
-        level: "lga",
+        level: "polling_unit",
       });
     }
   }
@@ -464,9 +471,17 @@ export default function Page() {
             </span>
             <span
               className={`text-xs cursor-pointer ${
-                currStat === "stat2" ? "text-[#604606]" : "text-[#063360]"
+                currStat == "stat2" ? "text-[#604606]" : "text-[#063360]"
               }`}
               onClick={() => setCurrStat("stat2")}
+            >
+              Polling unit opening time
+            </span>
+            <span
+              className={`text-xs cursor-pointer ${
+                currStat === "stat3" ? "text-[#604606]" : "text-[#063360]"
+              }`}
+              onClick={() => setCurrStat("stat3")}
             >
               Vote buying observed
             </span>
@@ -494,7 +509,7 @@ export default function Page() {
               className="border flex-1 py-2 flex flex-col pt-1 border-[#063360] rounded-md shadow-md"
               // style={{ height: 300 }}
             >
-              {currStat === "stat1" || currStat === "stat3" ? (
+              {currStat === "stat1" || currStat === "stat2" ? (
                 // <Bar options={chartData.options} data={chartData.data} />
                 chartData?.data?.datasets?.[0]?.data && (
                   <Chart
@@ -551,7 +566,7 @@ export default function Page() {
                   />
                 )
               ) : (
-                <Pie options={chartData.options} data={chartData.data} />
+                <Pie data={chartData.data} />
               )}
             </div>
           </div>
@@ -559,7 +574,9 @@ export default function Page() {
 
         <div className="flex-1 rounded-md border-t-8 border-b-2 border-x-4 border-[#063360]">
           <p className="bg-[#063360] px-4 text-white text-xs pb-1">
-            {currStat == "stat2" && "Vote buying observed"}
+            {currStat == "stat1" && "Collation center opening time"}
+            {currStat == "stat2" && "Polling unit opening time"}
+            {currStat == "stat3" && "Vote buying observed"}
             {currStat == "stat4" && "Electronic transmission of results"}
           </p>
 

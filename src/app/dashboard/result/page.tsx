@@ -109,6 +109,18 @@ export default function Page() {
     }
   }, [data, state, lga]);
 
+  const table2Data = useMemo(
+    () =>
+      data
+        .map((d) => ({ ...d, data: JSON.parse(d.data || "{}") }))
+        ?.filter(
+          (d) =>
+            (!!state ? d.state === state : true) &&
+            (!!lga ? d.lga === lga : true)
+        ),
+    [data, state, lga]
+  );
+
   useEffect(() => {
     fetchData();
 
@@ -241,6 +253,70 @@ export default function Page() {
                   colors: ["#063360"],
                 }}
               />
+            </div>
+          </div>
+
+          <div className="-m-1.5 mt-5 overflow-x-auto">
+            <div className="p-1.5 min-w-full inline-block align-middle">
+              <div className="border rounded-lg shadow overflow-hidden dark:border-gray-700 dark:shadow-gray-900">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-gray-400"
+                      >
+                        Observer Name
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-gray-400"
+                      >
+                        State
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-gray-400"
+                      >
+                        L.G.A
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-gray-400"
+                      >
+                        Polling Unit name
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-start text-xs font-medium text-gray-500 uppercase dark:text-gray-400"
+                      >
+                        Observing At
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                    {table2Data?.map((item) => (
+                      <tr>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800 dark:text-gray-200">
+                          {item?.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
+                          {item?.state}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
+                          {item?.lga}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
+                          {item?.data?.["collation_center_name"]}
+                        </td>
+                        <td className="px-6 py-4 capitalize whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
+                          {item?.level?.split("_").join(" ")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
