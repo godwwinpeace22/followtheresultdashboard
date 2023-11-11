@@ -1,37 +1,47 @@
 import React, { useMemo, useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
 import { StatesAndLGA } from "@/lib/states-and-lga";
 
 type Inputs = {
   name: string;
+  email: string;
   state: string;
   lga: string;
   location: boolean;
 };
 export default function Login({ login }: { login: any }) {
-  const [name, setName] = useState("");
   const [state, setState] = useState("");
-  const [lga, setLga] = useState("");
 
   const lgas = useMemo(() => {
     return StatesAndLGA.find((s) => s.state === state)?.lgas || [];
   }, [state]);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<Inputs>();
-  const onSubmit: SubmitHandler<Inputs> = (data) => saveUser(data);
+  const onSubmit = async (e: any) => {
+    e.preventDefault();
 
-  const saveUser = async (data: Inputs) => {
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const values: any = {};
+    formData.forEach((value, key) => {
+      values[key] = value;
+    });
+
+    const data = {
+      name: values.name,
+      email: values.email,
+      state: values.state,
+      lga: values.lga,
+      location: values.location,
+    };
+
     // console.log(data);
 
-    if (!data.state || !data?.lga || !data?.name) return;
+    if (!data.state || !data?.lga || !data?.name || !data?.email) return;
 
     const { latitude, longitude } = await getLocation();
 
     localStorage.setItem("name", data.name);
+    localStorage.setItem("email", data.email);
     localStorage.setItem("state", data.state);
     localStorage.setItem("lga", data.lga);
     localStorage.setItem("lat", latitude?.toString());
@@ -66,7 +76,7 @@ export default function Login({ login }: { login: any }) {
     <div className="bg-white borde flex flex-col w-full max-w-xl pt-20 border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
       <div className="p-4 mt-5">
         {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={onSubmit}>
           <div className="grid gap-y-4">
             {/* Form Group */}
             <div>
@@ -74,19 +84,44 @@ export default function Login({ login }: { login: any }) {
                 htmlFor="name"
                 className="block text-sm mb-2 dark:text-white"
               >
-                Your Name
+                Your Full Name
               </label>
               <div className="relative">
                 <input
                   type="text"
                   id="name"
                   className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400"
-                  aria-describedby="email-error"
-                  {...register("name", { required: true })}
+                  aria-describedby="name-error"
+                  name="name"
+                  required
+                  // {...register("name", { required: true })}
                 />
-                {errors.name && (
+                {/* {errors.name && (
                   <small className="text-red-500">This field is required</small>
-                )}
+                )} */}
+              </div>
+              <p className="hidden text-xs text-red-600 mt-2" id="name-error">
+                This field is required
+              </p>
+            </div>
+
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm mb-2 dark:text-white"
+              >
+                Your Email
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  id="email"
+                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400"
+                  aria-describedby="email-error"
+                  required
+                  name="email"
+                  // {...register("email", { required: true })}
+                />
               </div>
               <p className="hidden text-xs text-red-600 mt-2" id="email-error">
                 This field is required
@@ -104,18 +139,19 @@ export default function Login({ login }: { login: any }) {
                 id="hs-select-label"
                 className="py-3 px-4 pr-9 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
                 defaultValue={"Kogi"}
-                // required
-                {...register("state", { required: true })}
+                required
+                name="state"
+                // {...register("state", { required: true })}
                 onChange={(e) => setState(e.target.value)}
               >
-                <option value={0}>Select state</option>
+                {/* <option value={0}>Select state</option> */}
                 <option value={"Kogi"}>Kogi</option>
                 <option value={"Imo"}>Imo</option>
                 <option value={"Bayelsa"}>Bayelsa</option>
               </select>
-              {errors.state && (
+              {/* {errors.state && (
                 <small className="text-red-500">This field is required</small>
-              )}
+              )} */}
             </div>
 
             <div>
@@ -128,9 +164,10 @@ export default function Login({ login }: { login: any }) {
               <select
                 id="hs-select-label"
                 className="py-3 px-4 pr-9 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                {...register("lga", { required: true })}
+                // {...register("lga", { required: true })}
                 defaultValue={"Adavi"}
-                // required
+                required
+                name="lga"
               >
                 {/* <option value={0}>Select LGA</option> */}
                 {lgas.map((item) => (
@@ -139,9 +176,6 @@ export default function Login({ login }: { login: any }) {
                   </option>
                 ))}
               </select>
-              {errors.lga && (
-                <small className="text-red-500">This field is required</small>
-              )}
             </div>
 
             {/* End Form Group */}
@@ -152,9 +186,11 @@ export default function Login({ login }: { login: any }) {
                   id="location"
                   // name="remember-me"
                   type="checkbox"
+                  required
+                  name="location"
                   onInput={getLocation}
                   className="shrink-0 mt-0.5 border-gray-200 rounded text-[#063360] pointer-events-none focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-blue-500 dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
-                  {...register("location", { required: true })}
+                  // {...register("location", { required: true })}
                 />
               </div>
               <div className="ml-3">
@@ -163,9 +199,9 @@ export default function Login({ login }: { login: any }) {
                 </label>
               </div>
             </div>
-            {errors.lga && (
+            {/* {errors.lga && (
               <small className="text-red-500">This field is required</small>
-            )}
+            )} */}
             {/* End Checkbox */}
             <button
               type="submit"

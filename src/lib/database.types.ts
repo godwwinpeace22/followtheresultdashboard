@@ -37,7 +37,9 @@ export interface Database {
       collations: {
         Row: {
           created_at: string
+          data: string | null
           date: string | null
+          email: string | null
           id: number
           lat: string | null
           level: string | null
@@ -48,7 +50,9 @@ export interface Database {
         }
         Insert: {
           created_at?: string
+          data?: string | null
           date?: string | null
+          email?: string | null
           id?: number
           lat?: string | null
           level?: string | null
@@ -59,7 +63,9 @@ export interface Database {
         }
         Update: {
           created_at?: string
+          data?: string | null
           date?: string | null
+          email?: string | null
           id?: number
           lat?: string | null
           level?: string | null

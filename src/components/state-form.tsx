@@ -1,132 +1,118 @@
-import { useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { createReport } from "./server-actions";
+import { useEffect, useState } from "react";
+// import { useForm, SubmitHandler } from "react-hook-form";
+// import { createReport } from "./server-actions";
 import Completed from "./completed";
 import { supabase } from "@/lib/superbase";
 
-type Inputs = {
-  arrival_time: string;
-  collation_center_name: string;
-  collation_center_location: string;
-  collation_center_code: string;
-  inec_staff_arrival_time: string;
-  permitted_to_observe: string;
-  inec_staff_count: string;
-  women_inec_staff_count: string;
-  security_officials_count: string;
-  party_agents_count: string;
-  easy_access_to_collation_center: string;
-  many_young_people: string;
-  open_vote_buying: string;
-
-  process_1: string;
-  process_2: string;
-  process_3: string;
-  process_4: string;
-  process_5: string;
-  process_6: string;
-  process_7: string;
-  process_8: string;
-
-  A: string;
-  AA: string;
-  AAC: string;
-  ADC: string;
-  ADP: string;
-  APC: string;
-  APGA: string;
-  APM: string;
-  APP: string;
-  BP: string;
-  LP: string;
-  NNPP: string;
-  NRM: string;
-  PDP: string;
-  PRP: string;
-  SDP: string;
-  YPP: string;
-  ZLP: string;
-
-  violence_1: string;
-  violence_2: string;
-  violence_3: string;
-  violence_4: string;
-  violence_5: string;
-  violence_6: string;
-  violence_7: string;
-  violence_8: string;
-};
-
 export default function StateForm() {
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
 
-  const submitReport = (data: Inputs) => {
+  const [completedChecklist, setCompletedChecklist] = useState<string[]>([]);
+
+  async function uploadFile(file: any) {
+    const filename = new Date().toISOString();
+    const { error, data } = await supabase.storage
+      .from("uploads")
+      .upload(filename, file, {
+        upsert: true,
+      });
+
+    return { error, data };
+  }
+
+  const submitReport = async (e: any, checklistName: string) => {
+    e.preventDefault();
     if (loading) return;
 
-    setLoading(true);
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const values: any = {};
+    formData.forEach((value, key) => {
+      values[key] = value;
+    });
+
+    console.log({ values });
 
     const name = localStorage.getItem("name");
+    const email = localStorage.getItem("email");
     const state = localStorage.getItem("state");
     const lga = localStorage.getItem("lga");
     const lat = localStorage.getItem("lat");
     const lon = localStorage.getItem("lon");
 
-    supabase
+    const { data, error } = await supabase
       .from("collations")
-      .insert({
+      .select()
+      .eq("email", email!);
+    console.log({ data, error });
+
+    if (data) {
+      // upsert
+      const uploaded =
+        checklistName === "result"
+          ? await uploadFile(values["file-input"])
+          : { data: { path: "" }, error: null };
+      const oldData = data?.[data?.length - 1];
+      const j = JSON.parse(oldData?.data || "{}");
+      const newJsonData = { ...j, ...values };
+      console.log({ data, oldData, j, newJsonData });
+
+      const { data: d, error: err } = await supabase.from("collations").upsert({
+        ...oldData,
         name: name || "",
-        data: JSON.stringify(data),
-        level: "state",
+        email: email || "",
+        data: JSON.stringify(newJsonData),
+        level: "polling_unit",
         state: state || "",
         lga: lga || "",
         date: new Date().toDateString(),
         lat: lat || "0",
         lon: lon || "0",
-      })
-      .then((res) => {
-        if (res.error) {
-          alert("An error occured. Please try again later");
-        } else {
-          setDone(true);
-          // setLoading(false)
-        }
+        uploaded_img: uploaded.data ? uploaded.data.path : "",
       });
 
-    // createReport({
-    //   name: name || "",
-    //   data: JSON.stringify(data),
-    //   level: "state",
-    //   state: state || "",
-    //   lga: lga || "",
-    //   lat: lat || "0",
-    //   lon: lon || "0",
-    //   date: new Date().toDateString(),
-    // })
-    //   .then((res) => {
-    //     if (res.error) {
-    //       alert("An error occured. Please try again later");
-    //     } else {
-    //       setDone(true);
-    //       // setLoading(false)
-    //     }
-    //   })
-    //   .catch((err) => console.log(err));
+      console.log({ d, err });
+
+      if (error) {
+        alert("An error occured");
+        setLoading(false);
+      } else {
+        alert("Submitted successfully");
+
+        localStorage.setItem(checklistName, "1");
+        setCompletedChecklist([...completedChecklist, checklistName]);
+        setLoading(false);
+      }
+
+      if (err) {
+      }
+    } else {
+      console.log({ error });
+      // error
+      alert("An error occured");
+      setLoading(false);
+    }
   };
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<Inputs>();
-  const onSubmit: SubmitHandler<Inputs> = (data) => submitReport(data);
+  useEffect(() => {
+    const arr: string[] = [];
+    const checklist = ["arrival", "process", "result", "violence"];
+    checklist.forEach((item) => {
+      const a = localStorage.getItem(item);
+      if (a) {
+        arr.push(item);
+      }
+    });
+
+    setCompletedChecklist(arr);
+  }, []);
 
   const RadioButtonGroup = ({
     name,
     options,
   }: {
-    name: keyof Inputs;
+    name: string;
     options: { label: string; value: string }[];
   }) => {
     return (
@@ -135,11 +121,13 @@ export default function StateForm() {
           <div className="flex">
             <input
               type="radio"
+              name={name}
               className="shrink-0 mt-0.5 border-gray-200 rounded-full text-[#063360] focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:checked:bg-[#063360] dark:checked:border-blue-500 dark:focus:ring-offset-gray-800"
               value={option.value}
-              {...register(name, {
-                required: true,
-              })}
+              required
+              // {...register(name, {
+              //   required: true,
+              // })}
             />
 
             <label
@@ -150,19 +138,39 @@ export default function StateForm() {
             </label>
           </div>
         ))}
-        {errors[name] && (
+        {/* {errors[name] && (
           <small className="text-red-500">This field is required</small>
-        )}
+        )} */}
       </div>
     );
   };
 
+  const SubmitButton = () => (
+    <div className="flex justify-center items-center mt-20 mb-10">
+      <button
+        type="submit"
+        className="mx-auto w-60 self-center py-3 px-4 inline-flex justify-center items-center gap-2 rounded-full border border-transparent font-semibold bg-[#063360] text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
+      >
+        {loading && (
+          <div>
+            <span className="sr-only">Loading...</span>
+            <span
+              className="animate-spin inline-block w-4 h-4 border-[3px] border-current border-t-transparent text-white rounded-full"
+              role="status"
+              aria-label="loading"
+            >
+              <span className="sr-only">Loading...</span>
+            </span>
+          </div>
+        )}
+        Submit
+      </button>
+    </div>
+  );
+
   return (
-    <form
-      className="flex flex-col w-full max-w-xl pt-20"
-      onSubmit={handleSubmit(onSubmit)}
-    >
-      {done ? (
+    <div className="flex flex-col w-full max-w-xl pt-20">
+      {new Set(completedChecklist)?.size === 4 ? (
         <Completed />
       ) : (
         <div className="hs-accordion-group">
@@ -213,237 +221,251 @@ export default function StateForm() {
               className="hs-accordion-content px-5 w-full overflow-hidden transition-[height] duration-300"
               aria-labelledby="hs-basic-heading-one"
             >
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  What is the name of the collation center?
-                </label>
-                <input
-                  type="text"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("collation_center_name", { required: true })}
-                />
-                {errors.collation_center_name && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+              {completedChecklist?.includes("arrival") ? (
+                <div className="flex gap-2 items-center justify-center  mb-5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    fill="green"
+                  >
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 18 21 6l-1.41-1.41z" />
+                  </svg>
+                  <span className="text-sm text-center">
+                    Checklist completed{" "}
+                  </span>
+                </div>
+              ) : (
+                <form className="" onSubmit={(e) => submitReport(e, "arrival")}>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      What is the name of the collation center?
+                    </label>
+                    <input
+                      type="text"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="collation_center_name"
+                      // {...register("collation_center_name", { required: true })}
+                    />
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  What is the location of the collation center?
-                </label>
-                <input
-                  type="text"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("collation_center_location", { required: true })}
-                />
-                {errors.collation_center_location && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  What is the code or collation center number?
-                </label>
-                <input
-                  type="text"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("collation_center_code", { required: true })}
-                />
-                {errors.collation_center_code && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-10 w-full">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  What time did you arrive the collation center?
-                </label>
-                <input
-                  type="time"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("arrival_time", { required: true })}
-                />
-                {errors.arrival_time && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  What time did the INEC staff arrive at the collation center?
-                </label>
-                <input
-                  type="time"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("inec_staff_arrival_time", { required: true })}
-                />
-                {errors.inec_staff_arrival_time && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      What is the location of the collation center?
+                    </label>
+                    <input
+                      type="text"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="collation_center_location"
+                      // {...register("collation_center_location", { required: true })}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      What is the code or collation center number?
+                    </label>
+                    <input
+                      type="text"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="collation_center_code"
+                      // {...register("collation_center_code", { required: true })}
+                    />
+                  </div>
+                  <div className="mb-10 w-full">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      What time did you arrive the collation center?
+                    </label>
+                    <input
+                      type="time"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="arrival_time"
+                      // {...register("arrival_time", { required: true })}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      What time did the INEC staff arrive at the collation
+                      center?
+                    </label>
+                    <input
+                      type="time"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="inec_staff_arrival_time"
+                      // {...register("inec_staff_arrival_time", { required: true })}
+                    />
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Were you permitted to observe? Yes, No
-                </label>
-                <RadioButtonGroup
-                  name="permitted_to_observe"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Were you permitted to observe? Yes, No
+                    </label>
+                    <RadioButtonGroup
+                      name="permitted_to_observe"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  How many INEC staff were present?
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("inec_staff_count", { required: true })}
-                />
-                {errors.inec_staff_count && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      How many INEC staff were present?
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="inec_staff_count"
+                      // {...register("inec_staff_count", { required: true })}
+                    />
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  How many women were INEC staff?
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("women_inec_staff_count", { required: true })}
-                />
-                {errors.women_inec_staff_count && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  How many security officials were at the collation center?
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("security_officials_count", { required: true })}
-                />
-                {errors.security_officials_count && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  How many party agents were at the collation center?
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("party_agents_count", { required: true })}
-                />
-                {errors.party_agents_count && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      How many women were INEC staff?
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="women_inec_staff_count"
+                      // {...register("women_inec_staff_count", { required: true })}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      How many security officials were at the collation center?
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="security_officials_count"
+                      // {...register("security_officials_count", { required: true })}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      How many party agents were at the collation center?
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="party_agents_count"
+                      // {...register("party_agents_count", { required: true })}
+                    />
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Was the access to the collation center easy for PWDs? Yes, No
-                </label>
-                <RadioButtonGroup
-                  name="easy_access_to_collation_center"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Was the access to the collation center easy for PWDs? Yes,
+                      No
+                    </label>
+                    <RadioButtonGroup
+                      name="easy_access_to_collation_center"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Was there a lot of young people aged between the ages of 18-35
-                  at the collation center?
-                </label>
-                <RadioButtonGroup
-                  name="many_young_people"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Was there a lot of young people aged between the ages of
+                      18-35 at the collation center?
+                    </label>
+                    <RadioButtonGroup
+                      name="many_young_people"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Was there incidence of open vote buying either near or at the
-                  collation center where you were assigned?
-                </label>
-                <RadioButtonGroup
-                  name="open_vote_buying"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Was there incidence of open vote buying either near or at
+                      the collation center where you were assigned?
+                    </label>
+                    <RadioButtonGroup
+                      name="open_vote_buying"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+
+                  <SubmitButton />
+                </form>
+              )}
             </div>
           </div>
           <div
@@ -491,140 +513,162 @@ export default function StateForm() {
               className="hs-accordion-content px-5 hidden w-full overflow-hidden transition-[height] duration-300"
               aria-labelledby="hs-basic-heading-two"
             >
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Did the INEC staff take delivery of all the original copies of
-                  Forms EC8A from the lga collation center together with other
-                  materials and reports relating to the election, including Form
-                  EC8B?
-                </label>
-                <RadioButtonGroup
-                  name="process_1"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Did the INEC staff entered the results for the Governorship
-                  election by entering the votes scored by each Political Party
-                  in the original copy of Forms EC60H in figures and words?
-                </label>
-                <RadioButtonGroup
-                  name="process_2"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Did the INEC staff cross-check the totals and entries in the
-                  form EC60H with the Collation Support and Result Verification
-                  System (CSRVS) Secretariat?
-                </label>
-                <RadioButtonGroup
-                  name="process_3"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Did the Inec staff announce loudly the votes scored by each
-                  Political Party?
-                </label>
-                <RadioButtonGroup
-                  name="process_4"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Did the inec staff sign, date and stamp the forms and request
-                  the political parties agents at the collation center to
-                  countersign?
-                </label>
-                <RadioButtonGroup
-                  name="process_5"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Did the inec staff distribute copies of the forms political
-                  parties agents and the Police?
-                </label>
-                <RadioButtonGroup
-                  name="process_6"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Did the inec staff) electronically transmit or transfer the
-                  result directly to the IREV Portal as prescribed by the
-                  Commission?
-                </label>
-                <RadioButtonGroup
-                  name="process_7"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Did the inec staff paste the results in an open place for
-                  public review at collation center? Choose: Yes or No
-                </label>
-                <RadioButtonGroup
-                  name="process_8"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
+              {completedChecklist?.includes("process") ? (
+                <div className="flex gap-2 items-center justify-center  mb-5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    fill="green"
+                  >
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 18 21 6l-1.41-1.41z" />
+                  </svg>
+                  <span className="text-sm text-center">
+                    Checklist completed{" "}
+                  </span>
+                </div>
+              ) : (
+                <form className="" onSubmit={(e) => submitReport(e, "process")}>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Did the INEC staff take delivery of all the original
+                      copies of Forms EC8A from the lga collation center
+                      together with other materials and reports relating to the
+                      election, including Form EC8B?
+                    </label>
+                    <RadioButtonGroup
+                      name="process_1"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Did the INEC staff entered the results for the
+                      Governorship election by entering the votes scored by each
+                      Political Party in the original copy of Forms EC60H in
+                      figures and words?
+                    </label>
+                    <RadioButtonGroup
+                      name="process_2"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Did the INEC staff cross-check the totals and entries in
+                      the form EC60H with the Collation Support and Result
+                      Verification System (CSRVS) Secretariat?
+                    </label>
+                    <RadioButtonGroup
+                      name="process_3"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Did the Inec staff announce loudly the votes scored by
+                      each Political Party?
+                    </label>
+                    <RadioButtonGroup
+                      name="process_4"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Did the inec staff sign, date and stamp the forms and
+                      request the political parties agents at the collation
+                      center to countersign?
+                    </label>
+                    <RadioButtonGroup
+                      name="process_5"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Did the inec staff distribute copies of the forms
+                      political parties agents and the Police?
+                    </label>
+                    <RadioButtonGroup
+                      name="process_6"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Did the inec staff) electronically transmit or transfer
+                      the result directly to the IREV Portal as prescribed by
+                      the Commission?
+                    </label>
+                    <RadioButtonGroup
+                      name="process_7"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Did the inec staff paste the results in an open place for
+                      public review at collation center? Choose: Yes or No
+                    </label>
+                    <RadioButtonGroup
+                      name="process_8"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+
+                  <SubmitButton />
+                </form>
+              )}
             </div>
           </div>
           <div
@@ -672,344 +716,413 @@ export default function StateForm() {
               className="hs-accordion-content hidden px-5 w-full overflow-hidden transition-[height] duration-300"
               aria-labelledby="hs-basic-heading-three"
             >
-              <h2 className="mb-10 text-gray-500">Enter party results</h2>
+              {completedChecklist?.includes("result") ? (
+                <div className="flex gap-2 items-center justify-center  mb-5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    fill="green"
+                  >
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 18 21 6l-1.41-1.41z" />
+                  </svg>
+                  <span className="text-sm text-center">
+                    Checklist completed{" "}
+                  </span>
+                </div>
+              ) : (
+                <form onSubmit={(e) => submitReport(e, "result")}>
+                  <h2 className="mb-10 text-gray-500">Enter party results</h2>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      A
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="A"
+                      // {...register("A", { required: true })}
+                    />
+                    {/* {errors.A && (
+                  <small className="text-red-500">This field is required</small>
+                )} */}
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      AA
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      name="AA"
+                      required
+                      // {...register("AA", { required: true })}
+                    />
+                    {/* {errors.AA && (
+                  <small className="text-red-500">This field is required</small>
+                )} */}
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      AAC
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="AAC"
+                      // {...register("AAC", { required: true })}
+                    />
+                    {/* {errors.AAC && (
+                  <small className="text-red-500">This field is required</small>
+                )} */}
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      ADC
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="ADC"
+                      // {...register("ADC", { required: true })}
+                    />
+                    {/* {errors.ADC && (
+                  <small className="text-red-500">This field is required</small>
+                )} */}
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      ADP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="ADP"
+                      // {...register("ADP", { required: true })}
+                    />
+                    {/* {errors.ADP && (
+                  <small className="text-red-500">This field is required</small>
+                )} */}
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  A
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("A", { required: true })}
-                />
-                {errors.A && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      APC
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="APC"
+                      // {...register("APC", { required: true })}
+                    />
+                    {/* {errors.APC && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  AA
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("AA", { required: true })}
-                />
-                {errors.AA && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  AAC
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("AAC", { required: true })}
-                />
-                {errors.AAC && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  ADC
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("ADC", { required: true })}
-                />
-                {errors.ADC && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  ADP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("ADP", { required: true })}
-                />
-                {errors.ADP && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  APC
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("APC", { required: true })}
-                />
-                {errors.APC && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      APGA
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      name="APGA"
+                      required
+                      // {...register("APGA", { required: true })}
+                    />
+                    {/* {errors.APGA && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  APGA
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("APGA", { required: true })}
-                />
-                {errors.APGA && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      APM
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="APM"
+                      // {...register("APM", { required: true })}
+                    />
+                    {/* {errors.APM && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      APP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="APP"
+                      // {...register("APP", { required: true })}
+                    />
+                    {/* {errors.APP && (
+                  <small className="text-red-500">This field is required</small>
+                )} */}
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      BP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="BP"
+                      // {...register("BP", { required: true })}
+                    />
+                    {/* {errors.BP && (
+                  <small className="text-red-500">This field is required</small>
+                )} */}
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  APM
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("APM", { required: true })}
-                />
-                {errors.APM && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      LP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="LP"
+                      // {...register("LP", { required: true })}
+                    />
+                    {/* {errors.LP && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  APP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("APP", { required: true })}
-                />
-                {errors.APP && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  BP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("BP", { required: true })}
-                />
-                {errors.BP && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      NNPP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="NNPP"
+                      // {...register("NNPP", { required: true })}
+                    />
+                    {/* {errors.NNPP && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  LP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("LP", { required: true })}
-                />
-                {errors.LP && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      NRM
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="NRM"
+                      // {...register("NRM", { required: true })}
+                    />
+                    {/* {errors.NRM && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  NNPP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("NNPP", { required: true })}
-                />
-                {errors.NNPP && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      PDP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="PDP"
+                      // {...register("PDP", { required: true })}
+                    />
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  NRM
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("NRM", { required: true })}
-                />
-                {errors.NRM && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      PRP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="PRP"
+                      // {...register("PRP", { required: true })}
+                    />
+                    {/* {errors.PRP && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  PDP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("PDP", { required: true })}
-                />
-                {errors.PDP && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      SDP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="SDP"
+                      // {...register("SDP", { required: true })}
+                    />
+                    {/* {errors.SDP && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      YPP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="YPP"
+                      // {...register("YPP", { required: true })}
+                    />
+                    {/* {errors.YPP && (
+                  <small className="text-red-500">This field is required</small>
+                )} */}
+                  </div>
 
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  PRP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("PRP", { required: true })}
-                />
-                {errors.PRP && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      ZLP
+                    </label>
+                    <input
+                      type="number"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="ZLP"
+                      // {...register("ZLP", { required: true })}
+                    />
+                    {/* {errors.ZLP && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  SDP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("SDP", { required: true })}
-                />
-                {errors.SDP && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  YPP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("YPP", { required: true })}
-                />
-                {errors.YPP && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  ZLP
-                </label>
-                <input
-                  type="number"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("ZLP", { required: true })}
-                />
-                {errors.ZLP && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
+                  <div className="mb-5">
+                    <div>
+                      <label htmlFor="file-input" className="sr-only">
+                        Upload result
+                      </label>
+                      <input
+                        type="file"
+                        name="file-input"
+                        accept="image/*"
+                        id="file-input"
+                        className="block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600
+                    file:border-0
+                    file:bg-gray-100 file:me-4
+                    file:py-3 file:px-4
+                    dark:file:bg-gray-700 dark:file:text-gray-400"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <SubmitButton />
+                </form>
+              )}
             </div>
           </div>
 
@@ -1058,165 +1171,170 @@ export default function StateForm() {
               className="hs-accordion-content hidden px-5 w-full overflow-hidden transition-[height] duration-300"
               aria-labelledby="hs-basic-heading-three"
             >
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
+              {completedChecklist?.includes("violence") ? (
+                <div className="flex gap-2 items-center justify-center  mb-5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    fill="green"
+                  >
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 18 21 6l-1.41-1.41z" />
+                  </svg>
+                  <span className="text-sm text-center">
+                    Checklist completed{" "}
+                  </span>
+                </div>
+              ) : (
+                <form
+                  className=""
+                  onSubmit={(e) => submitReport(e, "violence")}
                 >
-                  Was there any occurrence of intimidation by political party
-                  supporters at the collation center where you observed?
-                </label>
-                <RadioButtonGroup
-                  name="violence_1"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  If yes, which party supporters carried out such acts?
-                </label>
-                <input
-                  type="text"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("violence_2", { required: true })}
-                />
-                {errors.violence_2 && (
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Was there any occurrence of intimidation by political
+                      party supporters at the collation center where you
+                      observed?
+                    </label>
+                    <RadioButtonGroup
+                      name="violence_1"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      If yes, which party supporters carried out such acts?
+                    </label>
+                    <input
+                      type="text"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="violence_2"
+                      // {...register("violence_2", { required: true })}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Was there any issue of election related violence at the
+                      collation center?
+                    </label>
+                    <RadioButtonGroup
+                      name="violence_3"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      If yes, why did it happen?
+                    </label>
+                    <input
+                      type="text"
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="violence_4"
+                      // {...register("violence_4", { required: true })}
+                    />
+                    {/* {errors.violence_4 && (
                   <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Was there any issue of election related violence at the
-                  collation center?
-                </label>
-                <RadioButtonGroup
-                  name="violence_3"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  If yes, why did it happen?
-                </label>
-                <input
-                  type="text"
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("violence_4", { required: true })}
-                />
-                {errors.violence_4 && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Did the Police and security agencies step in to stop the
-                  violence erupting?
-                </label>
-                <RadioButtonGroup
-                  name="violence_5"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Was there any issue of election related violence after the
-                  election
-                </label>
-                <RadioButtonGroup
-                  name="violence_6"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  Were there any casualties?
-                </label>
-                <RadioButtonGroup
-                  name="violence_7"
-                  options={[
-                    { value: "on", label: "Yes" },
-                    { value: "off", label: "No" },
-                  ]}
-                />
-              </div>
-              <div className="mb-5">
-                <label
-                  htmlFor="input-label"
-                  className="block text-sm font-medium mb-2 dark:text-white"
-                >
-                  If yes, how many number of casualties did you record or count?
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  id="input-label"
-                  className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                  placeholder=""
-                  {...register("violence_8", { required: true })}
-                />
-                {errors.violence_8 && (
-                  <small className="text-red-500">This field is required</small>
-                )}
-              </div>
+                )} */}
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Did the Police and security agencies step in to stop the
+                      violence erupting?
+                    </label>
+                    <RadioButtonGroup
+                      name="violence_5"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Was there any issue of election related violence after the
+                      election
+                    </label>
+                    <RadioButtonGroup
+                      name="violence_6"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Were there any casualties?
+                    </label>
+                    <RadioButtonGroup
+                      name="violence_7"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      If yes, how many number of casualties did you record or
+                      count?
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      id="input-label"
+                      className="py-3 px-4 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+                      placeholder=""
+                      required
+                      name="violence_8"
+                      // {...register("violence_8", { required: true })}
+                    />
+                  </div>
 
-              <div className="flex justify-center items-center mt-20 mb-10">
-                <button
-                  type="submit"
-                  className="mx-auto w-60 self-center py-3 px-4 inline-flex justify-center items-center gap-2 rounded-full border border-transparent font-semibold bg-[#063360] text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all text-sm dark:focus:ring-offset-gray-800"
-                >
-                  {loading && (
-                    <div>
-                      <span className="sr-only">Loading...</span>
-                      <span
-                        className="animate-spin inline-block w-4 h-4 border-[3px] border-current border-t-transparent text-white rounded-full"
-                        role="status"
-                        aria-label="loading"
-                      >
-                        <span className="sr-only">Loading...</span>
-                      </span>
-                    </div>
-                  )}
-                  Submit
-                </button>
-              </div>
+                  <SubmitButton />
+                </form>
+              )}
             </div>
           </div>
         </div>
       )}
-    </form>
+    </div>
   );
 }
