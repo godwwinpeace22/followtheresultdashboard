@@ -60,6 +60,7 @@ type Inputs = {
 
 export default function LGAForm() {
   const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<FileList | null>();
 
   const [completedChecklist, setCompletedChecklist] = useState<string[]>([]);
 
@@ -71,12 +72,16 @@ export default function LGAForm() {
         upsert: true,
       });
 
+    console.log({ error, data });
+
     return { error, data };
   }
 
   const submitReport = async (e: any, checklistName: string) => {
     e.preventDefault();
     if (loading) return;
+
+    setLoading(true);
 
     const form = e.target;
     const formData = new FormData(form);
@@ -105,7 +110,7 @@ export default function LGAForm() {
       // upsert
       const uploaded =
         checklistName === "result"
-          ? await uploadFile(values["file-input"])
+          ? await uploadFile(files?.[0])
           : { data: { path: "" }, error: null };
       const oldData = data?.[data?.length - 1];
       const j = JSON.parse(oldData?.data || "{}");
@@ -117,7 +122,7 @@ export default function LGAForm() {
         name: name || "",
         email: email || "",
         data: JSON.stringify(newJsonData),
-        level: "polling_unit",
+        level: "lga",
         state: state || "",
         lga: lga || "",
         date: new Date().toDateString(),
@@ -286,23 +291,6 @@ export default function LGAForm() {
                 </div>
               ) : (
                 <form className="" onSubmit={(e) => submitReport(e, "arrival")}>
-                  <div className="mb-5">
-                    <label
-                      htmlFor="input-label"
-                      className="block text-sm font-medium mb-2 dark:text-white"
-                    >
-                      Was the result transmitted electronically to INEC server
-                      in your presence?
-                    </label>
-                    <RadioButtonGroup
-                      name="electronic_transmission"
-                      options={[
-                        { value: "on", label: "Yes" },
-                        { value: "off", label: "No" },
-                      ]}
-                    />
-                  </div>
-
                   <div className="mb-10 w-full">
                     <label
                       htmlFor="input-label"
@@ -437,6 +425,23 @@ export default function LGAForm() {
                     </label>
                     <RadioButtonGroup
                       name="easy_access_to_collation_center"
+                      options={[
+                        { value: "on", label: "Yes" },
+                        { value: "off", label: "No" },
+                      ]}
+                    />
+                  </div>
+
+                  <div className="mb-5">
+                    <label
+                      htmlFor="input-label"
+                      className="block text-sm font-medium mb-2 dark:text-white"
+                    >
+                      Was the result transmitted electronically to INEC server
+                      in your presence?
+                    </label>
+                    <RadioButtonGroup
+                      name="electronic_transmission"
                       options={[
                         { value: "on", label: "Yes" },
                         { value: "off", label: "No" },
@@ -1110,6 +1115,7 @@ export default function LGAForm() {
                         name="file-input"
                         accept="image/*"
                         id="file-input"
+                        onChange={(e) => setFiles(e.target.files)}
                         className="block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600
                     file:border-0
                     file:bg-gray-100 file:me-4

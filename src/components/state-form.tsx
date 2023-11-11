@@ -6,6 +6,7 @@ import { supabase } from "@/lib/superbase";
 
 export default function StateForm() {
   const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<FileList | null>();
 
   const [completedChecklist, setCompletedChecklist] = useState<string[]>([]);
 
@@ -32,7 +33,7 @@ export default function StateForm() {
       values[key] = value;
     });
 
-    console.log({ values });
+    // console.log({ values });
 
     const name = localStorage.getItem("name");
     const email = localStorage.getItem("email");
@@ -45,25 +46,25 @@ export default function StateForm() {
       .from("collations")
       .select()
       .eq("email", email!);
-    console.log({ data, error });
+    // console.log({ data, error });
 
     if (data) {
       // upsert
       const uploaded =
         checklistName === "result"
-          ? await uploadFile(values["file-input"])
+          ? await uploadFile(files?.[0])
           : { data: { path: "" }, error: null };
       const oldData = data?.[data?.length - 1];
       const j = JSON.parse(oldData?.data || "{}");
       const newJsonData = { ...j, ...values };
-      console.log({ data, oldData, j, newJsonData });
+      // console.log({ data, oldData, j, newJsonData });
 
       const { data: d, error: err } = await supabase.from("collations").upsert({
         ...oldData,
         name: name || "",
         email: email || "",
         data: JSON.stringify(newJsonData),
-        level: "polling_unit",
+        level: "state",
         state: state || "",
         lga: lga || "",
         date: new Date().toDateString(),
@@ -72,7 +73,7 @@ export default function StateForm() {
         uploaded_img: uploaded.data ? uploaded.data.path : "",
       });
 
-      console.log({ d, err });
+      // console.log({ d, err });
 
       if (error) {
         alert("An error occured");
@@ -1111,6 +1112,7 @@ export default function StateForm() {
                         name="file-input"
                         accept="image/*"
                         id="file-input"
+                        onChange={(e) => setFiles(e.target.files)}
                         className="block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600
                     file:border-0
                     file:bg-gray-100 file:me-4

@@ -83,7 +83,7 @@ export default function Page() {
         (d) =>
           (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
       )
-      //   ?.filter((d) => d.lat && d?.lon)
+      ?.filter((d) => d.level == "lga")
       .map((d) => ({ ...d, data: JSON.parse(d.data) }));
 
     const yes = parsed.filter((d) => d.data[value] == "on")?.length;
@@ -184,7 +184,7 @@ export default function Page() {
 
   useEffect(() => {
     if (data?.length) {
-      setData([...data, newData]);
+      setData([...data?.filter((d) => d.id != newData?.id), newData]);
     }
   }, [newData]);
 
@@ -199,13 +199,12 @@ export default function Page() {
 
     async function listener() {
       const channels = supabase
-        .channel("custom-insert-channel")
+        .channel("custom-all-channel")
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "collations" },
+          { event: "*", schema: "public", table: "collations" },
           (payload) => {
-            console.log("Change received!", payload.new);
-            // setData([...data, payload?.new]);
+            console.log("Change received!", payload);
             setNewData(payload.new);
           }
         )

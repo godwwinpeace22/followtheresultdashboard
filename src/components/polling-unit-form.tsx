@@ -4,61 +4,9 @@ import { useEffect, useState } from "react";
 import Completed from "./completed";
 import { supabase } from "@/lib/superbase";
 
-type Inputs1 = {
-  arrival_time: string;
-  collation_center_name: string;
-  collation_center_location: string;
-  collation_center_code: string;
-  inec_staff_arrival_time: string;
-  permitted_to_observe: string;
-  inec_staff_count: string;
-  women_inec_staff_count: string;
-  security_officials_count: string;
-  party_agents_count: string;
-  easy_access_to_collation_center: string;
-  many_young_people: string;
-  open_vote_buying: string;
-
-  process_1: string;
-  process_2: string;
-  process_3: string;
-  process_4: string;
-  process_5: string;
-  process_6: string;
-  process_7: string;
-  process_8: string;
-
-  A: string;
-  AA: string;
-  AAC: string;
-  ADC: string;
-  ADP: string;
-  APC: string;
-  APGA: string;
-  APM: string;
-  APP: string;
-  BP: string;
-  LP: string;
-  NNPP: string;
-  NRM: string;
-  PDP: string;
-  PRP: string;
-  SDP: string;
-  YPP: string;
-  ZLP: string;
-
-  violence_1: string;
-  violence_2: string;
-  violence_3: string;
-  violence_4: string;
-  violence_5: string;
-  violence_6: string;
-  violence_7: string;
-  violence_8: string;
-};
-
 export default function PolingUnitForm() {
   const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<FileList | null>();
 
   const [completedChecklist, setCompletedChecklist] = useState<string[]>([]);
 
@@ -104,7 +52,7 @@ export default function PolingUnitForm() {
       // upsert
       const uploaded =
         checklistName === "result"
-          ? await uploadFile(values["file-input"])
+          ? await uploadFile(files?.[0])
           : { data: { path: "" }, error: null };
       const oldData = data?.[data?.length - 1];
       const j = JSON.parse(oldData?.data || "{}");
@@ -1226,6 +1174,7 @@ export default function PolingUnitForm() {
                         name="file-input"
                         accept="image/*"
                         id="file-input"
+                        onChange={(e) => setFiles(e.target.files)}
                         className="block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600
                     file:border-0
                     file:bg-gray-100 file:me-4

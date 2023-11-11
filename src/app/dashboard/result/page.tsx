@@ -29,7 +29,7 @@ export default function Page() {
     const formattedParties: { [partyName: string]: number } = {};
     for (const party of politicalParties) {
       //   console.log({ party }, m[party]);
-      formattedParties[party] = Number(m[party]);
+      formattedParties[party] = Number(m[party] || 0);
     }
     return formattedParties;
   }
@@ -86,7 +86,7 @@ export default function Page() {
 
     const aggregate = aggregateElectionResults(electionResult);
     setAllResults(aggregate);
-    // console.log({ aggregate, electionResult });
+    console.log({ aggregate, electionResult });
   }
 
   async function fetchData() {
@@ -99,7 +99,7 @@ export default function Page() {
 
   useEffect(() => {
     if (data?.length) {
-      setData([...data, newData]);
+      setData([...data?.filter((d) => d.id != newData?.id), newData]);
     }
   }, [newData]);
 
@@ -114,13 +114,12 @@ export default function Page() {
 
     async function listener() {
       const channels = supabase
-        .channel("custom-insert-channel")
+        .channel("custom-all-channel")
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "collations" },
+          { event: "*", schema: "public", table: "collations" },
           (payload) => {
-            // console.log("Change received!", payload.new);
-            // setData([...data, payload?.new]);
+            console.log("Change received!", payload);
             setNewData(payload.new);
           }
         )

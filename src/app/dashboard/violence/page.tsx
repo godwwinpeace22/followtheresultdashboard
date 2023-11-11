@@ -56,7 +56,7 @@ export default function Page() {
         (d) =>
           (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
       )
-      ?.filter((d) => d.level === "polling_unit")
+      ?.filter((d) => d.level === "lga")
       .map((d) => ({ ...d, data: JSON.parse(d.data) }));
 
     const yes = parsed.filter((d) => d.data[value] == "on")?.length;
@@ -106,15 +106,15 @@ export default function Page() {
         positiveText: "No casualties",
         negativeText: "Casualties",
         label: "Election violence casualties",
-        value: "violence_7",
+        value: "violence_5",
       });
     }
     if (currStat === "violence_during") {
       calcData({
         positiveText: "No",
         negativeText: "Yes",
-        label: "Violence during election",
-        value: "violence_3",
+        label: "Violence during collation",
+        value: "violence_2",
       });
     }
 
@@ -122,17 +122,17 @@ export default function Page() {
       calcData({
         positiveText: "No",
         negativeText: "Yes",
-        label: "Violence after election",
-        value: "violence_6",
+        label: "Violence after result announcement",
+        value: "violence_3",
       });
     }
 
-    if (currStat === "voter_intimidation") {
+    if (currStat === "stat4") {
       calcData({
-        positiveText: "No voter intimidation",
-        negativeText: "Voter intimidation",
-        label: "Voter intimidation",
-        value: "violence_1",
+        positiveText: "No",
+        negativeText: "Yes",
+        label: "Violence interrupts collation or announcement",
+        value: "violence_6",
       });
     }
   }
@@ -147,7 +147,7 @@ export default function Page() {
 
   useEffect(() => {
     if (data?.length) {
-      setData([...data, newData]);
+      setData([...data?.filter((d) => d.id != newData?.id), newData]);
     }
   }, [newData]);
 
@@ -162,13 +162,12 @@ export default function Page() {
 
     async function listener() {
       const channels = supabase
-        .channel("custom-insert-channel")
+        .channel("custom-all-channel")
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "collations" },
+          { event: "*", schema: "public", table: "collations" },
           (payload) => {
-            console.log("Change received!", payload.new);
-            // setData([...data, payload?.new]);
+            console.log("Change received!", payload);
             setNewData(payload.new);
           }
         )
@@ -250,7 +249,7 @@ export default function Page() {
               }`}
               onClick={() => setCurrStat("violence_during")}
             >
-              Violence during election
+              Violence during result collation
             </span>
             <span
               className={`text-xs cursor-pointer ${
@@ -260,17 +259,15 @@ export default function Page() {
               }`}
               onClick={() => setCurrStat("violence_after")}
             >
-              Violence after election
+              Violence after result announcement
             </span>
             <span
               className={`text-xs cursor-pointer ${
-                currStat === "voter_intimidation"
-                  ? "text-[#604606]"
-                  : "text-[#063360]"
+                currStat === "stat4" ? "text-[#604606]" : "text-[#063360]"
               }`}
-              onClick={() => setCurrStat("voter_intimidation")}
+              onClick={() => setCurrStat("stat4")}
             >
-              Voter intimidation
+              Violence interrupts collation or announcement
             </span>
           </div>
 
@@ -293,10 +290,12 @@ export default function Page() {
         >
           <p className="bg-[#063360] px-4 text-white text-xs pb-1">
             {currStat == "casualties" &&
-              "Severe injury, loss of life or destruction of electoral materials"}
-            {currStat == "violence_during" && "Violence during election"}
-            {currStat == "violence_after" && "Violence after election"}
-            {currStat == "voter_intimidation" && "Voter intimidation"}
+              "Injury, loss of life or destruction of electoral materials"}
+            {currStat == "violence_during" && "Violence during collation"}
+            {currStat == "violence_after" &&
+              "Violence after result announcement"}
+            {currStat == "stat4" &&
+              "Violence interrupts collation or announcement"}
           </p>
 
           <Map data={coordinates} />

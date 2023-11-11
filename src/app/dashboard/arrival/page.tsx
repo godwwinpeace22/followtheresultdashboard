@@ -39,25 +39,6 @@ export default function Page() {
     []
   );
 
-  const calcObservers = useCallback(() => {
-    const d = data.filter((a) => (state ? a.state === state : true));
-    const count = uniqBy(d, "name")?.length;
-
-    return count;
-  }, [data, lga, state]);
-
-  const calcLgas = useCallback(() => {
-    // const d = data.filter(a => a.state === state);
-    return uniqBy(data, "lga")?.length;
-  }, [data, lga, state]);
-
-  const calcPollingUnits = useCallback(() => {
-    const d = data.filter((a) =>
-      !state ? true : a.state === state && a.lga === lga
-    );
-    return uniqBy(d, "lga")?.length;
-  }, [data, lga, state]);
-
   function calcData({
     positiveText,
     negativeText,
@@ -72,7 +53,9 @@ export default function Page() {
     const parsed = data
       ?.filter(
         (d) =>
-          (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
+          d.level == "lga" &&
+          (!!state ? d.state == state : true) &&
+          (!!lga ? d.lga == lga : true)
       )
       //   ?.filter((d) => d.lat && d?.lon)
       .map((d) => ({ ...d, data: JSON.parse(d.data) }));
@@ -131,8 +114,8 @@ export default function Page() {
       calcData({
         positiveText: "Yes",
         negativeText: "No",
-        label: "Youth participation",
-        value: "many_young_people",
+        label: "Easy access to collation center for PWDs",
+        value: "easy_access_to_collation_center",
       });
     }
 
@@ -140,8 +123,8 @@ export default function Page() {
       calcData({
         positiveText: "Yes",
         negativeText: "No",
-        label: "Easy access to collation center for PWDs",
-        value: "easy_access_to_collation_center",
+        label: "Youth participation",
+        value: "many_young_people",
       });
     }
     if (currStat === "stat4") {
@@ -164,7 +147,7 @@ export default function Page() {
 
   useEffect(() => {
     if (data?.length) {
-      setData([...data, newData]);
+      setData([...data?.filter((d) => d?.id != newData?.id), newData]);
     }
   }, [newData]);
 
@@ -179,13 +162,12 @@ export default function Page() {
 
     async function listener() {
       const channels = supabase
-        .channel("custom-insert-channel")
+        .channel("custom-all-channel")
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "collations" },
+          { event: "*", schema: "public", table: "collations" },
           (payload) => {
-            console.log("Change received!", payload.new);
-            // setData([...data, payload?.new]);
+            console.log("Change received!", payload);
             setNewData(payload.new);
           }
         )

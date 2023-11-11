@@ -61,36 +61,6 @@ export default function Page() {
     []
   );
 
-  const calcPollingUnitObservers = useCallback(() => {
-    const d = data.filter(
-      (a) =>
-        (!!state ? a.state === state : true) &&
-        (!!lga ? a.lga === lga : true) &&
-        a.level === "polling_unit"
-    );
-    return uniqBy(d, "name")?.length;
-  }, [data, lga, state]);
-
-  const calcLgaObservers = useCallback(() => {
-    const d = data.filter(
-      (a) =>
-        (!!state ? a.state === state : true) &&
-        (!!lga ? a.lga === lga : true) &&
-        a.level === "lga"
-    );
-    return uniqBy(d, "name")?.length;
-  }, [data, lga, state]);
-
-  const calcStateObservers = useCallback(() => {
-    const d = data.filter(
-      (a) =>
-        (!!state ? a.state === state : true) &&
-        (!!lga ? a.lga === lga : true) &&
-        a.level === "state"
-    );
-    return uniqBy(d, "name")?.length;
-  }, [data, lga, state]);
-
   // Function to plot a bar chart
   function plotBarChart(times: string[]): {
     counts: number[];
@@ -150,19 +120,21 @@ export default function Page() {
     label,
     value,
     swapColors,
+    level,
   }: {
     positiveText: string;
     negativeText: string;
     label: string;
     value: string;
     swapColors?: boolean;
+    level: string;
   }) {
     const parsed = data
       ?.filter(
         (d) =>
           (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
       )
-      //   ?.filter((d) => d.lat && d?.lon)
+      ?.filter((d) => d.level == level)
       .map((d) => ({ ...d, data: JSON.parse(d.data) }));
 
     const yes = parsed.filter((d) => d.data[value] == "on")?.length;
@@ -213,19 +185,21 @@ export default function Page() {
     label,
     value,
     swapColors,
+    level,
   }: {
     positiveText: string;
     negativeText: string;
     label: string;
     value: string;
     swapColors?: boolean;
+    level: string;
   }) {
     const parsed = data
       ?.filter(
         (d) =>
           (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
       )
-      ?.filter((d) => d.level === "lga")
+      ?.filter((d) => d.level === level)
       .map((d) => ({ ...d, data: JSON.parse(d.data) }));
 
     const bg = [
@@ -347,6 +321,7 @@ export default function Page() {
         negativeText: "No",
         label: "Arrival of INEC staff",
         value: "inec_staff_arrival_time",
+        level: "lga",
       });
     }
 
@@ -357,6 +332,7 @@ export default function Page() {
         label: "Open vote buying",
         value: "open_vote_buying",
         swapColors: true,
+        level: "polling_unit",
       });
     }
 
@@ -366,6 +342,7 @@ export default function Page() {
         negativeText: "No",
         label: "BVAS time to accredit",
         value: "process_7",
+        level: "lga",
       });
     }
     if (currStat == "stat4") {
@@ -374,6 +351,7 @@ export default function Page() {
         negativeText: "No",
         label: "Electronic transmission of result",
         value: "process_7",
+        level: "lga",
       });
     }
   }
@@ -388,7 +366,7 @@ export default function Page() {
 
   useEffect(() => {
     if (data?.length) {
-      setData([...data, newData]);
+      setData([...data.filter((d) => d.id != newData.id), newData]);
     }
   }, [newData]);
 
@@ -403,13 +381,12 @@ export default function Page() {
 
     async function listener() {
       const channels = supabase
-        .channel("custom-insert-channel")
+        .channel("custom-all-channel")
         .on(
           "postgres_changes",
-          { event: "INSERT", schema: "public", table: "collations" },
+          { event: "*", schema: "public", table: "collations" },
           (payload) => {
-            console.log("Change received!", payload.new);
-            // setData([...data, payload?.new]);
+            console.log("Change received!", payload);
             setNewData(payload.new);
           }
         )
@@ -483,7 +460,7 @@ export default function Page() {
               }`}
               onClick={() => setCurrStat("stat1")}
             >
-              Polling unit opening time
+              Collation center opening time
             </span>
             <span
               className={`text-xs cursor-pointer ${
@@ -519,39 +496,60 @@ export default function Page() {
             >
               {currStat === "stat1" || currStat === "stat3" ? (
                 // <Bar options={chartData.options} data={chartData.data} />
-                <Chart
-                  series={[
-                    {
-                      name: "",
-                      data: chartData?.data?.datasets?.[0]?.data,
-                    },
-                  ]}
-                  options={{
-                    chart: {
-                      id: "basic-bar",
-                    },
-                    xaxis: {
-                      categories: chartData?.data?.labels,
-                    },
-                    colors: [
-                      function ({
-                        value,
-                        seriesIndex,
-                        dataPointIndex,
-                        w,
-                      }: any) {
-                        if (dataPointIndex <= 3) {
-                          return "#0fe665";
-                        } else if (dataPointIndex <= 6) {
-                          return "#d9a90d";
-                        } else {
-                          return "#ea1109";
-                        }
+                chartData?.data?.datasets?.[0]?.data && (
+                  <Chart
+                    series={[
+                      {
+                        name: "",
+                        data: chartData?.data?.datasets?.[0]?.data,
                       },
-                    ],
-                  }}
-                  type="bar"
-                />
+                    ]}
+                    options={{
+                      chart: {
+                        id: "basic-bar",
+                        type: "bar",
+                        height: 350,
+                      },
+
+                      plotOptions: {
+                        bar: {
+                          horizontal: false,
+                          columnWidth: 20, // You can also control the width using columnWidth
+                          // barWidth: 20, // Set the width of the bars in pixels
+                        },
+                      },
+                      dataLabels: {
+                        enabled: true,
+                        // formatter: function (val) {
+                        //   return val + "%"; // Add '%' as a suffix
+                        // },
+                        style: {
+                          fontSize: "8px", // Set the font size of the data labels
+                        },
+                      },
+                      xaxis: {
+                        categories: chartData?.data?.labels,
+                      },
+                      colors: [
+                        function ({
+                          value,
+                          seriesIndex,
+                          dataPointIndex,
+                          w,
+                        }: any) {
+                          if (dataPointIndex <= 3) {
+                            return "#0fe665";
+                          } else if (dataPointIndex <= 6) {
+                            return "#d9a90d";
+                          } else {
+                            return "#ea1109";
+                          }
+                        },
+                      ],
+                    }}
+                    type="bar"
+                  />
+                )
               ) : (
                 <Pie options={chartData.options} data={chartData.data} />
               )}
