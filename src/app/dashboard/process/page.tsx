@@ -4,10 +4,11 @@ import dynamic from "next/dynamic";
 import { StatesAndLGA } from "@/lib/states-and-lga";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Pie } from "react-chartjs-2";
-import { uniqBy } from "lodash";
+import { set, uniqBy } from "lodash";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
 import StatBoxes from "@/components/StatBoxes";
+import { calcData } from "@/lib/helpers";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -39,126 +40,59 @@ export default function Page() {
     []
   );
 
-  const chartOptions = {
-    chart: {
-      id: "basic-bar",
-    },
-    xaxis: {
-      categories: [1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998],
-    },
-  };
-
-  const calcObservers = useCallback(() => {
-    const d = data.filter((a) => (state ? a.state === state : true));
-    const count = uniqBy(d, "name")?.length;
-
-    return count;
-  }, [data, lga, state]);
-
-  const calcLgas = useCallback(() => {
-    // const d = data.filter(a => a.state === state);
-    return uniqBy(data, "lga")?.length;
-  }, [data, lga, state]);
-
-  const calcPollingUnits = useCallback(() => {
-    const d = data.filter((a) =>
-      !state ? true : a.state === state && a.lga === lga
-    );
-    return uniqBy(d, "lga")?.length;
-  }, [data, lga, state]);
-
-  function calcData({
-    positiveText,
-    negativeText,
-    label,
+  function setChartAndMapData({
     value,
+    offColor,
+    onColor,
   }: {
-    positiveText: string;
-    negativeText: string;
-    label: string;
     value: string;
+    onColor: string;
+    offColor: string;
   }) {
-    const parsed = data
-      ?.filter(
-        (d) =>
-          (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
-      )
-      ?.filter((d) => d.level == "lga")
-      .map((d) => ({ ...d, data: JSON.parse(d.data) }));
-
-    const yes = parsed.filter((d) => d.data[value] == "on")?.length;
-    const no = parsed.filter((d) => d.data[value] == "off")?.length;
-
-    setChartData({
-      data: {
-        labels: [negativeText, positiveText],
-        datasets: [
-          {
-            label: label,
-            data: [no, yes],
-            backgroundColor: [
-              "rgba(255, 99, 132, 0.2)",
-              "rgba(54, 235, 163, 0.2)",
-            ],
-            borderColor: ["rgba(255, 99, 132, 1)", "#36ebb5"],
-            borderWidth: 1,
-          },
-        ],
-      },
+    const { coord, chartData } = calcData({
+      value: value,
+      onColor: onColor,
+      offColor: offColor,
+      data,
+      state,
+      lga,
+      level: "lga",
     });
 
-    setCoordinates([
-      ...parsed
-        .filter((d) => d.data[value] == "on")
-        .map((i) => ({
-          lat: i?.lat,
-          lon: i?.lon,
-          icon: "RedIcon",
-          popupText: negativeText,
-        })),
-      ...parsed
-        .filter((d) => d.data[value] == "off")
-        .map((i) => ({
-          lat: i?.lat,
-          lon: i?.lon,
-          icon: "BlackIcon",
-          popupText: positiveText,
-        })),
-    ]);
+    setChartData(chartData);
+    setCoordinates(coord);
   }
 
   function calChartData() {
     if (currStat === "stat1") {
-      calcData({
-        positiveText: "Yes",
-        negativeText: "No",
-        label: "Electronic transmission of result",
+      setChartAndMapData({
         value: "process_7",
+        onColor: "green",
+        offColor: "red",
       });
     }
+
     if (currStat === "stat2") {
-      calcData({
-        positiveText: "Result annonced publicly",
-        negativeText: "Result not announced",
-        label: "Public announcement of result",
+      setChartAndMapData({
         value: "process_4",
+        onColor: "green",
+        offColor: "red",
       });
     }
 
     if (currStat === "stat3") {
-      calcData({
-        positiveText: "Yes",
-        negativeText: "No",
-        label: "Public view of result",
+      setChartAndMapData({
         value: "process_8",
+        onColor: "green",
+        offColor: "red",
       });
     }
+
     if (currStat === "stat4") {
-      calcData({
-        positiveText: "Yes",
-        negativeText: "No",
-        label: "INEC staff cross-check the entries in form EC60H",
+      setChartAndMapData({
         value: "process_3",
+        onColor: "green",
+        offColor: "red",
       });
     }
   }

@@ -17,6 +17,7 @@ import { uniqBy } from "lodash";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
 import StatBoxes from "@/components/StatBoxes";
+import { calcData } from "@/lib/helpers";
 
 ChartJS.register(
   ArcElement,
@@ -114,73 +115,27 @@ export default function Page() {
     return { counts, labels, percentages };
   }
 
-  function calcData({
-    positiveText,
-    negativeText,
-    label,
+  function setChartAndMapData({
     value,
-    swapColors,
-    level,
+    offColor,
+    onColor,
   }: {
-    positiveText: string;
-    negativeText: string;
-    label: string;
     value: string;
-    swapColors?: boolean;
-    level: string;
+    onColor: string;
+    offColor: string;
   }) {
-    const parsed = data
-      ?.filter(
-        (d) =>
-          d.level === level &&
-          (!!state ? d.state == state : true) &&
-          (!!lga ? d.lga == lga : true)
-      )
-      // ?.filter((d) => d.level == level)
-      .map((d) => ({ ...d, data: JSON.parse(d.data) }));
-
-    const yes = parsed.filter((d) => d.data[value] == "on")?.length;
-    const no = parsed.filter((d) => d.data[value] == "off")?.length;
-
-    // console.log({ parsed, yes, no });
-
-    const bg = ["rgba(255, 99, 132, 0.2)", "rgba(54, 235, 163, 0.2)"];
-
-    const borderColors = ["rgba(255, 99, 132, 1)", "#36ebb5"];
-
-    setChartData({
-      data: {
-        labels: [negativeText, positiveText],
-        datasets: [
-          {
-            label: label,
-            data: [no, yes],
-            backgroundColor: swapColors ? bg.reverse() : bg,
-            borderColor: swapColors ? borderColors?.reverse() : borderColors,
-            borderWidth: 1,
-          },
-        ],
-      },
+    const { coord, chartData } = calcData({
+      value: value,
+      onColor: onColor,
+      offColor: offColor,
+      data,
+      state,
+      lga,
+      level: "polling_unit",
     });
 
-    setCoordinates([
-      ...parsed
-        .filter((d) => (d.data[value] == swapColors ? "off" : "on"))
-        .map((i) => ({
-          lat: i?.lat,
-          lon: i?.lon,
-          icon: "RedIcon",
-          popupText: `${label}: ${negativeText} (${i?.lga})`,
-        })),
-      ...parsed
-        .filter((d) => (d.data[value] == swapColors ? "on" : "off"))
-        .map((i) => ({
-          lat: i?.lat,
-          lon: i?.lon,
-          icon: "BlackIcon",
-          popupText: `${label}: ${positiveText} (${i?.lga})`,
-        })),
-    ]);
+    setChartData(chartData);
+    setCoordinates(coord);
   }
 
   function calcBarChartData({
@@ -344,22 +299,23 @@ export default function Page() {
     }
 
     if (currStat === "stat3") {
-      calcData({
-        positiveText: "Yes",
-        negativeText: "No",
-        label: "Vote buying observed",
+      setChartAndMapData({
+        // positiveText: "Yes",
+        // negativeText: "No",
+        // label: "Vote buying observed",
         value: "open_vote_buying",
-        level: "polling_unit",
-        swapColors: true,
+        onColor: "red",
+        offColor: "green",
       });
     }
     if (currStat == "stat4") {
-      calcData({
-        positiveText: "Yes",
-        negativeText: "No",
-        label: "Electronic transmission of result",
+      setChartAndMapData({
+        // positiveText: "Yes",
+        // negativeText: "No",
+        // label: "Electronic transmission of result",
         value: "process_7",
-        level: "polling_unit",
+        onColor: "green",
+        offColor: "red",
       });
     }
   }

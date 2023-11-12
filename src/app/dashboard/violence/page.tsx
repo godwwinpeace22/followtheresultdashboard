@@ -8,6 +8,7 @@ import { uniqBy } from "lodash";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
 import StatBoxes from "@/components/StatBoxes";
+import { calcData } from "@/lib/helpers";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -40,99 +41,70 @@ export default function Page() {
     []
   );
 
-  function calcData({
-    positiveText,
-    negativeText,
-    label,
+  function setChartAndMapData({
     value,
+    offColor,
+    onColor,
   }: {
-    positiveText: string;
-    negativeText: string;
-    label: string;
     value: string;
+    onColor: string;
+    offColor: string;
   }) {
-    const parsed = data
-      ?.filter(
-        (d) =>
-          (!!state ? d.state == state : true) && (!!lga ? d.lga == lga : true)
-      )
-      ?.filter((d) => d.level === "lga")
-      .map((d) => ({ ...d, data: JSON.parse(d.data) }));
-
-    const yes = parsed.filter((d) => d.data[value] == "on")?.length;
-    const no = parsed.filter((d) => d.data[value] == "off")?.length;
-
-    setChartData({
-      data: {
-        labels: [negativeText, positiveText],
-        datasets: [
-          {
-            label: label,
-            data: [no, yes],
-            backgroundColor: [
-              "rgba(255, 99, 132, 0.2)",
-              "rgba(54, 235, 163, 0.2)",
-            ],
-            borderColor: ["rgba(255, 99, 132, 1)", "#36ebb5"],
-            borderWidth: 1,
-          },
-        ],
-      },
+    const { coord, chartData } = calcData({
+      value: value,
+      onColor: onColor,
+      offColor: offColor,
+      data,
+      state,
+      lga,
+      level: "lga",
     });
 
-    setCoordinates([
-      ...parsed
-        .filter((d) => d.data[value] == "on")
-        .map((i) => ({
-          lat: i?.lat,
-          lon: i?.lon,
-          icon: "RedIcon",
-          popupText: negativeText,
-        })),
-      ...parsed
-        .filter((d) => d.data[value] == "off")
-        .map((i) => ({
-          lat: i?.lat,
-          lon: i?.lon,
-          icon: "BlackIcon",
-          popupText: positiveText,
-        })),
-    ]);
+    setChartData(chartData);
+    setCoordinates(coord);
   }
 
   function calChartData() {
     if (currStat === "casualties") {
-      calcData({
-        positiveText: "No casualties",
-        negativeText: "Casualties",
-        label: "Election violence casualties",
+      setChartAndMapData({
+        // positiveText: "No casualties",
+        // negativeText: "Casualties",
+        // label: "Election violence casualties",
         value: "violence_5",
+        onColor: "red",
+        offColor: "green",
       });
     }
     if (currStat === "violence_during") {
-      calcData({
-        positiveText: "No",
-        negativeText: "Yes",
-        label: "Violence during collation",
+      setChartAndMapData({
+        // positiveText: "No",
+        // negativeText: "Yes",
+        // label: "Violence during collation",
         value: "violence_2",
+        onColor: "red",
+        offColor: "green",
       });
     }
 
     if (currStat === "violence_after") {
-      calcData({
-        positiveText: "No",
-        negativeText: "Yes",
-        label: "Violence after result announcement",
+      setChartAndMapData({
+        // positiveText: "No",
+        // negativeText: "Yes",
+        // label: "Violence after result announcement",
         value: "violence_3",
+        onColor: "red",
+        offColor: "green",
       });
     }
 
     if (currStat === "stat4") {
-      calcData({
-        positiveText: "No",
-        negativeText: "Yes",
-        label: "Violence interrupts collation or announcement",
+      setChartAndMapData({
+        // positiveText: "No",
+        // negativeText: "Yes",
+        // label: "Violence interrupts collation",
         value: "violence_6",
+        onColor: "red",
+        offColor: "green",
       });
     }
   }

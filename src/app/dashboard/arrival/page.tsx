@@ -8,6 +8,7 @@ import { uniqBy } from "lodash";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
 import StatBoxes from "@/components/StatBoxes";
+import { calcData } from "@/lib/helpers";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -39,100 +40,69 @@ export default function Page() {
     []
   );
 
-  function calcData({
-    positiveText,
-    negativeText,
-    label,
+  function setChartAndMapData({
     value,
+    offColor,
+    onColor,
   }: {
-    positiveText: string;
-    negativeText: string;
-    label: string;
     value: string;
+    onColor: string;
+    offColor: string;
   }) {
-    const parsed = data
-      ?.filter(
-        (d) =>
-          d.level == "lga" &&
-          (!!state ? d.state == state : true) &&
-          (!!lga ? d.lga == lga : true)
-      )
-      //   ?.filter((d) => d.lat && d?.lon)
-      .map((d) => ({ ...d, data: JSON.parse(d.data) }));
-
-    const yes = parsed.filter((d) => d.data[value] == "on")?.length;
-    const no = parsed.filter((d) => d.data[value] == "off")?.length;
-
-    setChartData({
-      data: {
-        labels: [negativeText, positiveText],
-        datasets: [
-          {
-            label: label,
-            data: [no, yes],
-            backgroundColor: [
-              "rgba(255, 99, 132, 0.2)",
-              "rgba(54, 235, 163, 0.2)",
-            ],
-            borderColor: ["rgba(255, 99, 132, 1)", "#36ebb5"],
-            borderWidth: 1,
-          },
-        ],
-      },
+    const { coord, chartData } = calcData({
+      value: value,
+      onColor: onColor,
+      offColor: offColor,
+      data,
+      state,
+      lga,
+      level: "lga",
     });
 
-    setCoordinates([
-      ...parsed
-        .filter((d) => d.data[value] == "on")
-        .map((i) => ({
-          lat: i?.lat,
-          lon: i?.lon,
-          icon: "RedIcon",
-          popupText: negativeText,
-        })),
-      ...parsed
-        .filter((d) => d.data[value] == "off")
-        .map((i) => ({
-          lat: i?.lat,
-          lon: i?.lon,
-          icon: "BlackIcon",
-          popupText: positiveText,
-        })),
-    ]);
+    setChartData(chartData);
+    setCoordinates(coord);
   }
 
   function calChartData() {
     if (currStat === "stat1") {
-      calcData({
-        positiveText: "Yes",
-        negativeText: "No",
-        label: "Permission to observers",
+      setChartAndMapData({
+        // positiveText: "Yes",
+        // negativeText: "No",
+        // label: "Permission to observers",
         value: "permitted_to_observe",
+        onColor: "green",
+        offColor: "red",
       });
     }
     if (currStat === "stat2") {
-      calcData({
-        positiveText: "Yes",
-        negativeText: "No",
-        label: "Easy access to collation center for PWDs",
+      setChartAndMapData({
+        // positiveText: "Yes",
+        // negativeText: "No",
+        // label: "Easy access to collation center for PWDs",
         value: "easy_access_to_collation_center",
+        onColor: "green",
+        offColor: "red",
       });
     }
 
     if (currStat === "stat3") {
-      calcData({
-        positiveText: "Yes",
-        negativeText: "No",
-        label: "Youth participation",
+      setChartAndMapData({
+        // positiveText: "Yes",
+        // negativeText: "No",
+        // label: "Youth participation",
         value: "many_young_people",
+        onColor: "green",
+        offColor: "red",
       });
     }
     if (currStat === "stat4") {
-      calcData({
-        positiveText: "Yes",
-        negativeText: "No",
-        label: "Open vote buying",
+      setChartAndMapData({
+        // positiveText: "Yes",
+        // negativeText: "No",
+        // label: "Open vote buying",
         value: "open_vote_buying",
+        onColor: "green",
+        offColor: "red",
       });
     }
   }
