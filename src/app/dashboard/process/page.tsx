@@ -103,17 +103,6 @@ export default function Page() {
     if (data) {
       setData(data);
     }
-
-    const channels = supabase
-      .channel("custom-insert-channel")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "collations" },
-        (payload) => {
-          console.log("Change received!", payload);
-        }
-      )
-      .subscribe();
   }
 
   useEffect(() => {
@@ -138,7 +127,7 @@ export default function Page() {
           "postgres_changes",
           { event: "*", schema: "public", table: "collations" },
           (payload) => {
-            console.log("Change received!", payload);
+            // console.log("Change received!", payload);
             setNewData(payload.new);
           }
         )

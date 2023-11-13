@@ -71,6 +71,7 @@ export default function Page() {
         aggregatedResults[partyName] += votes;
       }
     }
+
     return aggregatedResults;
   }
 
@@ -85,8 +86,25 @@ export default function Page() {
       .map((d) => formatPoliticalParties(politicalParties, d));
 
     const aggregate = aggregateElectionResults(electionResult);
-    setAllResults(aggregate);
-    console.log({ aggregate, electionResult });
+
+    const totalCount = Object.values(aggregate).reduce(
+      (acc, count) => acc + count,
+      0
+    );
+
+    // Calculate percentages
+
+    const percentages = { ...aggregate };
+    Object.keys(aggregate).forEach(
+      (party) =>
+        // ({[party]: ((aggregate[party] / totalCount) * 100).toFixed(1)})
+        (percentages[party] = Number(
+          ((aggregate[party] / totalCount) * 100).toFixed(1)
+        ))
+    );
+
+    setAllResults(percentages);
+    // console.log({ aggregate, electionResult });
   }
 
   async function fetchData() {
@@ -131,7 +149,7 @@ export default function Page() {
           "postgres_changes",
           { event: "*", schema: "public", table: "collations" },
           (payload) => {
-            console.log("Change received!", payload);
+            // console.log("Change received!", payload);
             setNewData(payload.new);
           }
         )
@@ -246,6 +264,25 @@ export default function Page() {
                 options={{
                   chart: {
                     id: "basic-bar",
+                    type: "bar",
+                    height: 350,
+                  },
+
+                  plotOptions: {
+                    bar: {
+                      horizontal: false,
+                      columnWidth: 30, // You can also control the width using columnWidth
+                      // barWidth: 20, // Set the width of the bars in pixels
+                    },
+                  },
+                  dataLabels: {
+                    enabled: true,
+                    formatter: function (val) {
+                      return val + "%"; // Add '%' as a suffix
+                    },
+                    style: {
+                      fontSize: "8px", // Set the font size of the data labels
+                    },
                   },
                   xaxis: {
                     categories: Object.keys(allResults),

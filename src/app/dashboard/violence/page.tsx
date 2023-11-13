@@ -139,7 +139,7 @@ export default function Page() {
           "postgres_changes",
           { event: "*", schema: "public", table: "collations" },
           (payload) => {
-            console.log("Change received!", payload);
+            // console.log("Change received!", payload);
             setNewData(payload.new);
           }
         )
