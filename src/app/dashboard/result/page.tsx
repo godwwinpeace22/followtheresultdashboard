@@ -16,6 +16,7 @@ export default function Page() {
   const [newData, setNewData] = useState<any>({});
 
   const [allResults, setAllResults] = useState<{ [p: string]: number }>({});
+  const [barChartData, setBarChartData] = useState<{ [p: string]: number }>({});
 
   const lgas = useMemo(() => {
     return StatesAndLGA.find((s) => s.state === state)?.lgas;
@@ -103,7 +104,8 @@ export default function Page() {
         ))
     );
 
-    setAllResults(percentages);
+    setAllResults(aggregate);
+    setBarChartData(percentages);
     // console.log({ aggregate, electionResult });
   }
 
@@ -242,7 +244,7 @@ export default function Page() {
                             {item}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200">
-                            {allResults[item]}
+                            {allResults[item]?.toLocaleString()}
                           </td>
                         </tr>
                       ))}
@@ -258,7 +260,7 @@ export default function Page() {
                 series={[
                   {
                     name: "Score",
-                    data: Object.values(allResults),
+                    data: Object.values(barChartData),
                   },
                 ]}
                 options={{
@@ -285,7 +287,7 @@ export default function Page() {
                     },
                   },
                   xaxis: {
-                    categories: Object.keys(allResults),
+                    categories: Object.keys(barChartData),
                   },
                   colors: ["#063360"],
                 }}
