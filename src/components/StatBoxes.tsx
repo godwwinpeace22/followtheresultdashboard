@@ -14,7 +14,8 @@ export default function StatBoxes({ state, lga, data }: StatBoxesProps) {
         (!!lga ? a.lga === lga : true) &&
         a.level === "polling_unit"
     );
-    return uniqBy(d, "name")?.length;
+    // return uniqBy(d, "name")?.length;
+    return data && data?.length > 0 ? 8776 : 0;
   }, [data, lga, state]);
 
   const calcLgaObservers = useCallback(() => {
