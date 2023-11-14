@@ -463,7 +463,7 @@ export default function Page() {
           <div className="grid gap-5 grid-cols-[1fr_2fr] mt-5 borde">
             <StatBoxes state={state} lga={lga} data={data} />
             <div
-              className="border flex-1 py-2 flex flex-col pt-1 border-[#063360] rounded-md shadow-md"
+              className="border flex-1 justify-end flex flex-col pt-1 border-[#063360] rounded-md shadow-md"
               // style={{ height: 300 }}
             >
               {currStat === "stat1" || currStat === "stat2" ? (
