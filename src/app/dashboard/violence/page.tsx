@@ -180,8 +180,8 @@ export default function Page() {
                 className="py-1 px-3 pe-9 block w-full border-gray-100 rounded-sm text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"
               >
                 <option value="">Select</option>
-                <option value={"Kogi"}>Kogi</option>
-                <option value={"Imo"}>Imo</option>
+                <option value={"Edo"}>Edo</option>
+                <option value={"Ondo"}>Ondo</option>
                 <option value={"Bayelsa"}>Bayelsa</option>
               </select>
             </div>

@@ -138,16 +138,15 @@ export default function Login({ login }: { login: any }) {
               <select
                 id="hs-select-label"
                 className="py-3 px-4 pr-9 block w-full border-gray-200 rounded-md text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-                defaultValue={"Kogi"}
+                defaultValue={"Edo"}
                 required
                 name="state"
                 // {...register("state", { required: true })}
                 onChange={(e) => setState(e.target.value)}
               >
                 {/* <option value={0}>Select state</option> */}
-                <option value={"Kogi"}>Kogi</option>
-                <option value={"Imo"}>Imo</option>
-                <option value={"Bayelsa"}>Bayelsa</option>
+                <option value={"Edo"}>Edo</option>
+                <option value={"Ondo"}>Ondo</option>
               </select>
               {/* {errors.state && (
                 <small className="text-red-500">This field is required</small>
