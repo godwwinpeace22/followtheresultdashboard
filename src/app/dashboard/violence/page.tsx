@@ -182,7 +182,6 @@ export default function Page() {
                 <option value="">Select</option>
                 <option value={"Edo"}>Edo</option>
                 <option value={"Ondo"}>Ondo</option>
-                <option value={"Bayelsa"}>Bayelsa</option>
               </select>
             </div>
             <div className="flex flex-col">
