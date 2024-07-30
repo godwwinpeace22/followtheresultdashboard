@@ -10,7 +10,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 export default function Page() {
-  const [state, setState] = useState("Edo");
+  const [state, setState] = useState("Kogi");
   const [lga, setLga] = useState("");
   const [data, setData] = useState<any[]>([]);
   const [newData, setNewData] = useState<any>({});
@@ -189,11 +189,12 @@ export default function Page() {
               <select
                 onChange={(e) => setState(e.currentTarget?.value)}
                 className="py-1 px-3 pe-9 block w-full border-gray-100 rounded-sm text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"
-                defaultValue={"Edo"}
+                defaultValue={"Kogi"}
               >
                 <option value="">Select</option>
-                <option value={"Edo"}>Edo</option>
-                <option value={"Ondo"}>Ondo</option>
+                <option value={"Kogi"}>Kogi</option>
+                <option value={"Imo"}>Imo</option>
+                <option value={"Bayelsa"}>Bayelsa</option>
               </select>
             </div>
             <div className="flex flex-col">
