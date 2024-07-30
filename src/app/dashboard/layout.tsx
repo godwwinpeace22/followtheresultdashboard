@@ -31,12 +31,12 @@ export default function RootLayout({
           </div>
 
           <div className="flex flex-row gap-3 justify-end items-center">
-            <img src="/nyff.jpeg" alt="nyff logo" className="w-24" />
-            <img
+            {/* <img src="/nyff.jpeg" alt="nyff logo" className="w-24" /> */}
+            {/* <img
               src="/leap-africa.png"
               alt="leap africa logo"
               className="w-24"
-            />
+            /> */}
             <img
               src="/readytoleadafrica.jpeg"
               alt="readytoleadafrica logo"
