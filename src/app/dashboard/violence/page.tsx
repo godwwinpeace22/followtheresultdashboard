@@ -1,10 +1,9 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { StatesAndLGA } from "@/lib/states-and-lga";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Pie } from "react-chartjs-2";
-import { uniqBy } from "lodash";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
 import StatBoxes from "@/components/StatBoxes";
@@ -67,9 +66,6 @@ export default function Page() {
   function calChartData() {
     if (currStat === "casualties") {
       setChartAndMapData({
-        // positiveText: "No casualties",
-        // negativeText: "Casualties",
-        // label: "Election violence casualties",
         value: "violence_5",
         onColor: "red",
         offColor: "green",
@@ -77,9 +73,6 @@ export default function Page() {
     }
     if (currStat === "violence_during") {
       setChartAndMapData({
-        // positiveText: "No",
-        // negativeText: "Yes",
-        // label: "Violence during collation",
         value: "violence_2",
         onColor: "red",
         offColor: "green",
