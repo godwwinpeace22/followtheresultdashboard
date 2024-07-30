@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { StatesAndLGA } from "@/lib/states-and-lga";
 import {
@@ -12,8 +12,7 @@ import {
   LinearScale,
   CategoryScale,
 } from "chart.js";
-import { Bar, Pie } from "react-chartjs-2";
-import { uniqBy } from "lodash";
+import { Pie } from "react-chartjs-2";
 import { supabase } from "@/lib/superbase";
 import HeaderTabs from "@/components/HeaderTabs";
 import StatBoxes from "@/components/StatBoxes";
@@ -34,7 +33,6 @@ ChartJS.register(
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 export default function Page() {
-  // const [currTab, setCurrTab] = useState("home");
   const [currStat, setCurrStat] = useState("stat1");
   const [state, setState] = useState("");
   const [lga, setLga] = useState("");
@@ -461,12 +459,8 @@ export default function Page() {
 
           <div className="grid gap-5 grid-cols-[1fr_2fr] mt-5 borde">
             <StatBoxes state={state} lga={lga} data={data} />
-            <div
-              className="border flex-1 justify-end flex flex-col pt-1 border-[#063360] rounded-md shadow-md"
-              // style={{ height: 300 }}
-            >
+            <div className="border flex-1 justify-end flex flex-col pt-1 border-[#063360] rounded-md shadow-md">
               {currStat === "stat1" || currStat === "stat2" ? (
-                // <Bar options={chartData.options} data={chartData.data} />
                 chartData?.data?.datasets?.[0]?.data && (
                   <Chart
                     series={[
