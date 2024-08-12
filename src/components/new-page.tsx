@@ -111,22 +111,12 @@ export default function Component() {
           </div>
         </div>
         <div className="flex-1 relative h-[300px] w-[300px] md:h-[600px] md:w-auto rounded-lg overflow-hidden mx-auto">
-          {/* <div className="absolute inset-0 bg-black/50 z-10" /> */}
           <img
             src="/africa.svg"
             alt="Africa Map"
             className="object-cover object-center"
           />
-          <div className="absolute top-0 left-0 w-full h-full flex flex-col justify-between p-6 md:p-10">
-            {/* <div className="space-y-4">
-              <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground">
-                Empowering Africa's Future
-              </h2>
-              <p className="text-muted-foreground text-lg md:text-xl">
-                Insights and impact from the ground.
-              </p>
-            </div> */}
-          </div>
+          <div className="absolute top-0 left-0 w-full h-full flex flex-col justify-between p-6 md:p-10"></div>
         </div>
       </div>
     </div>
