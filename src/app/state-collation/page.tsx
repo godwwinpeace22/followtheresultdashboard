@@ -61,12 +61,6 @@ export default function Page() {
 
           <div className="flex flex-wrap justify-center items-center mt-20 gap-10">
             <img
-              src="nyff.jpeg"
-              alt="Nigeria Youth Futures Fund logo"
-              width={100}
-            />
-            <img src="leap-africa.png" alt="Leap Africa logo" width={100} />
-            <img
               src="readytoleadafrica.jpeg"
               alt="ReadyToLeadAfrica logo"
               width={100}
